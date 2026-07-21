@@ -1,5 +1,5 @@
 #!/usr/bin/env nu
-# update-packages.nu — refresh rev/tag + source hash for packages/*.nix
+# update-packages.nu — refresh rev + source hash for packages/*.nix to latest commit
 #
 # Usage:
 #   nu update-packages.nu                    # update every package under packages/
@@ -12,18 +12,10 @@
 #   - optionally $env.GITHUB_TOKEN set, to avoid GitHub API rate limits
 #
 # Behavior:
-#   - Tries the repo's tags first (newest by natural sort). If any tags exist,
-#     the package is treated as tag-tracking: `version` is set to the tag with
-#     any leading "v" stripped, and the rev/tag field is normalized back to
-#     the literal `v${version}` (or `${version}` if the tag has no "v" prefix
-#     — see the `has_v_prefix` check below) so future version bumps keep working.
-#   - If a repo has NO tags at all, falls back to the latest commit on its
-#     default branch: `version` becomes `unstable-<7-char-sha>` and the
-#     rev/tag field is set to the full commit sha (no interpolation, since
-#     it's not derivable from version).
+#   - Always tracks the latest commit on the default branch.
+#   - Version format: `unstable-<7-char-sha>`.
 #   - Only touches `hash = "...";` (the fetchFromGitHub/fetchFromGitea source
-#     hash). `cargoHash` and any other fetch hashes are deliberately left
-#     alone — update those separately.
+#     hash). `cargoHash` is auto-resolved by building and parsing the mismatch error.
 #
 # Known limitations (kept simple on purpose):
 #   - Assumes one `owner`/`repo`/`domain`/`rev`/`tag`/`version`/`hash` per file.
@@ -41,31 +33,11 @@ def gh-headers [] {
     }
 }
 
-def gh-latest-tag [owner: string, repo: string] {
-    let url = $"https://api.github.com/repos/($owner)/($repo)/tags"
-    let tags = (http get --headers (gh-headers) $url)
-    if ($tags | is-empty) {
-        null
-    } else {
-        $tags | get name | sort --natural | last
-    }
-}
-
 def gh-default-branch-sha [owner: string, repo: string] {
     let repo_info = (http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)")
     let branch = $repo_info.default_branch
     let commit = (http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)/commits/($branch)")
     $commit.sha
-}
-
-def gitea-latest-tag [domain: string, owner: string, repo: string] {
-    let url = $"https://($domain)/api/v1/repos/($owner)/($repo)/tags"
-    let tags = (http get $url)
-    if ($tags | is-empty) {
-        null
-    } else {
-        $tags | get name | sort --natural | last
-    }
 }
 
 def gitea-default-branch-sha [domain: string, owner: string, repo: string] {
@@ -135,22 +107,12 @@ def update-package [file: string] {
     if $is_github {
         $rev_key = "rev"
         $archive_base = $"https://github.com/($owner)/($repo)/archive"
-        let tag = (gh-latest-tag $owner $repo)
-        if ($tag != null) {
-            print $"  tag: ($tag)"
-            let has_v_prefix = ($tag | str starts-with "v")
-            let bare = if $has_v_prefix { ($tag | str substring 1..) } else { $tag }
-            $new_version = $bare
-            $concrete_rev = $tag
-            $file_rev = if $has_v_prefix { 'v${version}' } else { '${version}' }
-        } else {
-            let sha = (gh-default-branch-sha $owner $repo)
-            let short = ($sha | str substring 0..7)
-            print $"  no tags — using latest commit ($short)"
-            $new_version = $"unstable-($short)"
-            $concrete_rev = $sha
-            $file_rev = $sha
-        }
+        let sha = (gh-default-branch-sha $owner $repo)
+        let short = ($sha | str substring 0..7)
+        print $"  latest commit: ($short)"
+        $new_version = $"unstable-($short)"
+        $concrete_rev = $sha
+        $file_rev = $sha
     } else {
         $rev_key = "tag"
         let domain = (extract-field $content "domain")
@@ -159,22 +121,12 @@ def update-package [file: string] {
             return
         }
         $archive_base = $"https://($domain)/($owner)/($repo)/archive"
-        let tag = (gitea-latest-tag $domain $owner $repo)
-        if ($tag != null) {
-            print $"  tag: ($tag)"
-            let has_v_prefix = ($tag | str starts-with "v")
-            let bare = if $has_v_prefix { ($tag | str substring 1..) } else { $tag }
-            $new_version = $bare
-            $concrete_rev = $tag
-            $file_rev = if $has_v_prefix { 'v${version}' } else { '${version}' }
-        } else {
-            let sha = (gitea-default-branch-sha $domain $owner $repo)
-            let short = ($sha | str substring 0..7)
-            print $"  no tags — using latest commit ($short)"
-            $new_version = $"unstable-($short)"
-            $concrete_rev = $sha
-            $file_rev = $sha
-        }
+        let sha = (gitea-default-branch-sha $domain $owner $repo)
+        let short = ($sha | str substring 0..7)
+        print $"  latest commit: ($short)"
+        $new_version = $"unstable-($short)"
+        $concrete_rev = $sha
+        $file_rev = $sha
     }
 
     let archive_url = $"($archive_base)/($concrete_rev).tar.gz"

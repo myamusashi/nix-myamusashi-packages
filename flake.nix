@@ -1,4 +1,6 @@
 {
+    description = "Nix packages playground";
+
     inputs = {
         nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
         flake-parts.url = "github:hercules-ci/flake-parts";

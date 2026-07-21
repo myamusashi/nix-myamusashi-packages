@@ -1,7 +1,7 @@
 {
     lib,
     stdenv,
-    fetchFromGitea,
+    fetchFromGitHub,
     pkg-config,
     cmake,
     ninja,
@@ -24,14 +24,13 @@
 }:
 stdenv.mkDerivation (finalAttrs: {
     pname = "quickshell";
-    version = "0.3.0";
+    version = "unstable-e649d247";
 
-    src = fetchFromGitea {
-        domain = "git.outfoxxed.me";
-        owner = "quickshell";
+    src = fetchFromGitHub {
+        owner = "quickshell-mirror";
         repo = "quickshell";
-        rev = "4df562dfb2475a9057f0f33a8db75808efad8670";
-        hash = "sha256-gU+VGpwGJ2vvg0mtYqVvj5u+2LteuHlpokH6JSAtueY=";
+        rev = "e649d247498512464457aefcd05b73038c4e65a1";
+        hash = "sha256-4i2GzlclQ+SEYlcEZs0kFNI8iBk+sbQlVUtMiiogvck=";
     };
 
     nativeBuildInputs = [
