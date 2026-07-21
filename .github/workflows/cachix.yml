@@ -32,6 +32,6 @@ jobs:
         env:
           NIXPKGS_ALLOW_UNFREE: 1
         run: |
-          nix eval --json .#packages.x86_64-linux --apply 'x: builtins.attrNames x' \
+          nix eval --impure --json .#packages.x86_64-linux --apply 'x: builtins.attrNames x' \
             | jq -r '.[]' \
-            | xargs -I {} nix build ".#{}" --no-link --print-out-paths
+            | xargs -I {} nix build --impure ".#{}" --no-link --print-out-paths
