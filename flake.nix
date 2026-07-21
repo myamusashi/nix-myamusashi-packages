@@ -86,23 +86,44 @@
         };
     };
 
-    outputs = inputs @ {flake-parts, aerothemeplasma-nix, neovim-nightly-overlay, ...}:
+    outputs = inputs @ {
+        flake-parts,
+        aerothemeplasma-nix,
+        neovim-nightly-overlay,
+        ...
+    }:
         flake-parts.lib.mkFlake {inherit inputs;} {
             systems = [
                 "x86_64-linux"
                 "aarch64-linux"
             ];
 
-            perSystem = {pkgs, system, ...}: let
+            perSystem = {
+                pkgs,
+                system,
+                ...
+            }: let
                 atpPkgs = aerothemeplasma-nix.packages.${system} or {};
                 pkgsWithNeovim = pkgs.extend neovim-nightly-overlay.overlays.default;
+                hyprland' = inputs.hyprland.packages.${system}.hyprland;
             in {
                 formatter = pkgs.alejandra;
 
-                packages = (pkgs.lib.packagesFromDirectoryRecursive {
-                    inherit (pkgs) callPackage;
-                    directory = ./packages;
-                }) // atpPkgs // { neovim = pkgsWithNeovim.neovim; };
+                packages =
+                    (pkgs.lib.packagesFromDirectoryRecursive {
+                        inherit (pkgs) callPackage;
+                        directory = ./packages;
+                    })
+                    // atpPkgs
+                    // {neovim = pkgsWithNeovim.neovim;}
+                    // {
+                        hypr-dynamic-cursors = pkgs.callPackage ./packages/hypr-dynamic-cursors.nix {
+                            hyprland = hyprland';
+                        };
+                        hyprland-scroll-overview = pkgs.callPackage ./packages/hyprland-scroll-overview.nix {
+                            hyprland = hyprland';
+                        };
+                    };
 
                 devShells.default = pkgs.mkShell {
                     buildInputs = with pkgs; [

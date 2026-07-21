@@ -2,17 +2,17 @@
     stdenvNoCC,
     hyprland,
     gcc14,
-fetchFromGitHub,
+    fetchFromGitHub,
 }:
 stdenvNoCC.mkDerivation rec {
     pname = "hypr-dynamic-cursors";
-	version = "unstable-29d10069";
+    version = "unstable-29d10069";
 
     src = fetchFromGitHub {
-      owner = "myamusashi";
-      repo = "hypr-dynamic-cursors";
-      rev = "29d10069fb288dd6c63971b772542be18f6a38de";
-      hash = "sha256-CihuLSp7WNZWrus6dva/0wqmpdVNaTjp3WsYmSzDfkU=";
+        owner = "myamusashi";
+        repo = "hypr-dynamic-cursors";
+        rev = "29d10069fb288dd6c63971b772542be18f6a38de";
+        hash = "sha256-CihuLSp7WNZWrus6dva/0wqmpdVNaTjp3WsYmSzDfkU=";
     };
 
     inherit (hyprland) buildInputs;
