@@ -4,6 +4,10 @@
     inputs = {
         nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
         flake-parts.url = "github:hercules-ci/flake-parts";
+        wl-screenrec-fork = {
+            url = "github:myamusashi/wl-screenrec";
+            inputs.nixpkgs.follows = "nixpkgs";
+        };
         aerothemeplasma-nix = {
             url = "github:myamusashi/aerothemeplasma-nix";
             inputs.nixpkgs.follows = "nixpkgs";
@@ -90,6 +94,7 @@
         flake-parts,
         aerothemeplasma-nix,
         neovim-nightly-overlay,
+        wl-screenrec-fork,
         ...
     }:
         flake-parts.lib.mkFlake {inherit inputs;} {
@@ -105,7 +110,8 @@
             }: let
                 atpPkgs = aerothemeplasma-nix.packages.${system} or {};
                 pkgsWithNeovim = pkgs.extend neovim-nightly-overlay.overlays.default;
-                hyprland' = inputs.hyprland.packages.${system}.hyprland;
+                wlScrnFork = wl-screenrec-fork.packages.${system}.default;
+                input_hyprland = inputs.hyprland.packages.${system}.hyprland;
             in {
                 formatter = pkgs.alejandra;
 
@@ -114,14 +120,15 @@
                         inherit (pkgs) callPackage;
                         directory = ./packages;
                     })
+                    // {inherit (pkgsWithNeovim) neovim;}
                     // atpPkgs
-                    // {neovim = pkgsWithNeovim.neovim;}
+                    // wlScrnFork
                     // {
                         hypr-dynamic-cursors = pkgs.callPackage ./packages/hypr-dynamic-cursors.nix {
-                            hyprland = hyprland';
+                            hyprland = input_hyprland;
                         };
                         hyprland-scroll-overview = pkgs.callPackage ./packages/hyprland-scroll-overview.nix {
-                            hyprland = hyprland';
+                            hyprland = input_hyprland;
                         };
                     };
 
