@@ -80,6 +80,10 @@
             url = "github:taj-ny/kwin-effects-forceblur";
             inputs.nixpkgs.follows = "nixpkgs";
         };
+        hyprland = {
+            url = "github:hyprwm/Hyprland";
+            inputs.nixpkgs.follows = "nixpkgs";
+        };
     };
 
     outputs = inputs @ {flake-parts, aerothemeplasma-nix, neovim-nightly-overlay, ...}:
