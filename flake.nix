@@ -122,7 +122,7 @@
                     })
                     // {inherit (pkgsWithNeovim) neovim;}
                     // atpPkgs
-                    // wlScrnFork
+                    // { wl-screenrec-fork = wlScrnFork; }
                     // {
                         hypr-dynamic-cursors = pkgs.callPackage ./packages/hypr-dynamic-cursors.nix {
                             hyprland = input_hyprland;
