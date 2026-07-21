@@ -5,7 +5,7 @@
         nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
         flake-parts.url = "github:hercules-ci/flake-parts";
         aerothemeplasma-nix = {
-            url = "github:nyakase/aerothemeplasma-nix";
+            url = "github:myamusashi/aerothemeplasma-nix";
             inputs.nixpkgs.follows = "nixpkgs";
         };
         neovim-nightly-overlay = {

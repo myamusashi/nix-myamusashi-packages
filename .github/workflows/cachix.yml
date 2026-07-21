@@ -34,5 +34,4 @@ jobs:
         run: |
           nix eval --impure --json .#packages.x86_64-linux --apply 'x: builtins.attrNames x' \
             | jq -r '.[]' \
-            | grep -vFx -f <(printf '%s\n' "default-rules" "plasma-workspace" "libplasma" "login-session") \
             | xargs -I {} nix build --impure ".#{}" --no-link --print-out-paths

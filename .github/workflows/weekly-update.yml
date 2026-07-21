@@ -46,7 +46,6 @@ jobs:
         run: |
           nix eval --json .#packages.x86_64-linux --apply 'x: builtins.attrNames x' \
             | jq -r '.[]' \
-            | grep -vFx -f <(printf '%s\n' "default-rules" "plasma-workspace" "libplasma" "login-session") \
             | xargs -I {} nix build ".#{}" --no-link --print-out-paths
 
       - name: Commit updates
