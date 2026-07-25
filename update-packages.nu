@@ -43,14 +43,17 @@ def gh-headers [] {
 }
 
 def gh-latest-release-tag [owner: string, repo: string] {
+    # Primary: list tags via git/refs/tags; GitHub returns them sorted by push
+    # date (newest last), which reflects actual tags more reliably than
+    # /releases/latest (only returns curated releases, may miss newer tags).
     try {
-        let release = (http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)/releases/latest")
-        $release.tag_name
-    } catch {
-        # fallback: list tags; GitHub returns them sorted by push date (newest last)
         let refs = (http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)/git/refs/tags")
         let tags = ($refs | each {|r| ($r.ref | str replace "refs/tags/" "") })
         $tags | last
+    } catch {
+        # fallback: /releases/latest
+        let release = (http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)/releases/latest")
+        $release.tag_name
     }
 }
 
