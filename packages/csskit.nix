@@ -7,13 +7,13 @@
 }:
 rustPlatform.buildRustPackage rec {
     pname = "csskit";
-    version = "unstable-50b0b490";
+    version = "unstable-ad35ca44";
 
     src = fetchFromGitHub {
         owner = "csskit";
         repo = "csskit";
-        rev = "50b0b490d0bf0109209803df4daca097e803cba4";
-        hash = "sha256-TKOlolookrLouOxxg6YNDA0EpcaD7nEzP/sc5xm98Zo=";
+        rev = "ad35ca4462d138352e5f9305a28e771db90537b1";
+        hash = "sha256-ma3LmrNFDhx0LQyXjvujd+IC56OV6gSkY2LU+EPIxsQ=";
     };
 
     cargoHash = "sha256-4hryB5nzNE5QC2bkWkK9t4x3VGt0fT4LFmP2kB2cdCM=";
