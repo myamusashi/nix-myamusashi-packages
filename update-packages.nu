@@ -95,8 +95,9 @@ def replace-quoted-field [content: string, key: string, new_value: string] {
     let anchored = ('^\s*' + $key + '\s*=\s*"')
     let escaped_value = ($new_value | str replace -a '$' '$$')
     let lines = ($content | lines)
-    let idx = ($lines | enumerate | where {|it| ($it.item =~ $anchored)} | first | get index)
-    if $idx == null { return $content }
+    let match = ($lines | enumerate | where {|it| ($it.item =~ $anchored)} | first)
+    if $match == null { return $content }
+    let idx = $match.index
     $lines
     | update $idx {|line|
         $line | str replace -r '"[^"]*"' $"\"($escaped_value)\""
