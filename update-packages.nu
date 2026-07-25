@@ -117,7 +117,15 @@ def update-package [file: string] {
     }
 
     let owner = (extract-field $content "owner")
-    let repo = (extract-field $content "repo")
+    mut repo = (extract-field $content "repo")
+
+    # resolve bare-variable repo = pname; (e.g. 9router.nix, neovide.nix)
+    if $repo == null {
+        let repo_line = ($content | lines | where ($it | str contains "repo =") | first)
+        if ($repo_line | str contains "repo = pname;") {
+            $repo = (extract-field $content "pname")
+        }
+    }
 
     if ($owner == null) or ($repo == null) {
         print $"  ! could not find owner/repo, skipping"
