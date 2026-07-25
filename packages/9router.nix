@@ -5,19 +5,19 @@
 }:
 buildNpmPackage rec {
     pname = "9router";
-    version = "0.5.35";
+    version = "0.5.8";
 
     src = fetchFromGitHub {
         owner = "decolua";
         repo = pname;
         rev = "v${version}";
-        hash = "sha256-KlVaZ47BU6RZpfzAW02K328RIkFxo8UPbAe3vCUHOXU=";
+        hash = "sha256-XBdnbSaLkrWVMnQzhRFhQQPG//MOViv4NC1zUD2H6PM=";
     };
 
     npmDepsHash = "sha256-duddNBnN33e4LtmiFy1lLOzLLdzlJr9kSJ/wBseIlow=";
 
     postPatch = ''
-        cp ${./package-lock.json} package-lock.json
+        cp ${./9router/package-lock.json} package-lock.json
         substituteInPlace src/app/layout.js \
             --replace-fail 'import { Inter } from "next/font/google";' 'const Inter = () => ({ variable: "--font-inter", subsets: ["latin"] });'
     '';
