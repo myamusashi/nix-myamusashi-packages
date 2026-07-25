@@ -1,5 +1,5 @@
 #!/usr/bin/env nu
-# update-packages.nu — refresh rev + source hash for packages/*.nix to latest commit
+# update-packages.nu — refresh rev/tag + source hash for packages/*.nix
 #
 # Usage:
 #   nu update-packages.nu                    # update every package under packages/
@@ -11,16 +11,25 @@
 #     your packages point at
 #   - optionally $env.GITHUB_TOKEN set, to avoid GitHub API rate limits
 #
-# Behavior:
-#   - Always tracks the latest commit on the default branch.
-#   - Version format: `unstable-<7-char-sha>`.
-#   - Only touches `hash = "...";` (the fetchFromGitHub/fetchFromGitea source
-#     hash). `cargoHash` is auto-resolved by building and parsing the mismatch error.
+# Behavior — two modes, detected from the current `version` field:
+#   **Tagged mode** — version does NOT start with `unstable-` (e.g. `"0.5.40"`):
+#      1. Fetch the latest release tag from GitHub / Gitea.
+#      2. Strip a leading `v` for the version field.
+#      3. If rev/tag uses interpolation (`"${version}"` / `"v${version}"`), leave it
+#         alone — only version changes.  Otherwise write the raw tag name.
+#      4. Prefetch the source hash from the tag archive.
+#   **Unstable mode** — version starts with `unstable-` (e.g. `"unstable-df91c757"`):
+#      1. Fetch the latest commit on the default branch.
+#      2. Set version to `unstable-<7-char-sha>`.
+#      3. Set rev (or tag for Gitea) to the full commit sha.
+#      4. Prefetch the source hash from the commit archive.
 #
-# Known limitations (kept simple on purpose):
-#   - Assumes one `owner`/`repo`/`domain`/`rev`/`tag`/`version`/`hash` per file.
-#   - Tag ordering uses natural string sort, not semver-aware sort — fine for
-#     plain "vX.Y.Z" tags, may pick wrong result on more exotic tag schemes.
+#   `cargoHash` (and `npmDepsHash`) are auto-resolved by building and parsing
+#   the mismatch error.
+#
+# Known limitations:
+#   - Tag ordering relies on the GitHub/Gitea API's default sort (by push/creation
+#     date), not semver-aware sort.
 #   - Gitea archive URLs assume the standard `/owner/repo/archive/<ref>.tar.gz`
 #     layout (true for stock Gitea/Forgejo instances).
 
@@ -33,11 +42,28 @@ def gh-headers [] {
     }
 }
 
+def gh-latest-release-tag [owner: string, repo: string] {
+    try {
+        let release = (http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)/releases/latest")
+        $release.tag_name
+    } catch {
+        # fallback: list tags; GitHub returns them sorted by push date (newest last)
+        let refs = (http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)/git/refs/tags")
+        let tags = ($refs | each {|r| ($r.ref | str replace "refs/tags/" "") })
+        $tags | last
+    }
+}
+
 def gh-default-branch-sha [owner: string, repo: string] {
     let repo_info = (http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)")
     let branch = $repo_info.default_branch
     let commit = (http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)/commits/($branch)")
     $commit.sha
+}
+
+def gitea-latest-tag [domain: string, owner: string, repo: string] {
+    let tags = (http get $"https://($domain)/api/v1/repos/($owner)/($repo)/tags")
+    ($tags | sort-by created_at -n | last).name
 }
 
 def gitea-default-branch-sha [domain: string, owner: string, repo: string] {
@@ -98,45 +124,70 @@ def update-package [file: string] {
         return
     }
 
+    let version_value = (extract-field $content "version")
+    let is_tagged = not ($version_value | str starts-with "unstable-")
+
     mut new_version = ""
-    mut concrete_rev = ""   # actual ref used to build the archive URL (real tag or full sha)
-    mut file_rev = ""      # what gets written into the rev/tag field in the .nix file
-    mut archive_base = ""
+    mut archive_ref = ""       # ref/tag used in the archive URL (full sha or tag name)
     mut rev_key = ""
+    mut archive_base = ""
+    mut should_update_rev = true
+    mut file_rev = ""          # value to write into rev/tag (full sha or tag name)
+    mut domain = ""
 
     if $is_github {
         $rev_key = "rev"
         $archive_base = $"https://github.com/($owner)/($repo)/archive"
-        let sha = (gh-default-branch-sha $owner $repo)
-        let short = ($sha | str substring 0..7)
-        print $"  latest commit: ($short)"
-        $new_version = $"unstable-($short)"
-        $concrete_rev = $sha
-        $file_rev = $sha
     } else {
         $rev_key = "tag"
-        let domain = (extract-field $content "domain")
+        $domain = (extract-field $content "domain")
         if ($domain == null) {
             print $"  ! could not find domain for Gitea fetch, skipping"
             return
         }
         $archive_base = $"https://($domain)/($owner)/($repo)/archive"
-        let sha = (gitea-default-branch-sha $domain $owner $repo)
+    }
+
+    if $is_tagged {
+        # --- tagged mode: fetch latest release tag ---
+        let tag = if $is_github {
+            (gh-latest-release-tag $owner $repo)
+        } else {
+            (gitea-latest-tag $domain $owner $repo)
+        }
+        print $"  latest tag: ($tag)"
+        $new_version = ($tag | str replace -r '^v' '')
+        $archive_ref = $tag
+        let current_rev = (extract-field $content $rev_key)
+        if ($current_rev != null) and ($current_rev | str contains '${version}') {
+            $should_update_rev = false
+        } else {
+            $file_rev = $tag
+        }
+    } else {
+        # --- unstable mode: fetch latest commit on default branch ---
+        let sha = if $is_github {
+            (gh-default-branch-sha $owner $repo)
+        } else {
+            (gitea-default-branch-sha $domain $owner $repo)
+        }
         let short = ($sha | str substring 0..7)
         print $"  latest commit: ($short)"
         $new_version = $"unstable-($short)"
-        $concrete_rev = $sha
+        $archive_ref = $sha
         $file_rev = $sha
     }
 
-    let archive_url = $"($archive_base)/($concrete_rev).tar.gz"
+    let archive_url = $"($archive_base)/($archive_ref).tar.gz"
     print $"  hashing ($archive_url) ..."
     let new_hash = (prefetch-hash $archive_url)
     print $"  hash: ($new_hash)"
 
     mut new_content = $content
     $new_content = (replace-quoted-field $new_content "version" $new_version)
-    $new_content = (replace-quoted-field $new_content $rev_key $file_rev)
+    if $should_update_rev {
+        $new_content = (replace-quoted-field $new_content $rev_key $file_rev)
+    }
     $new_content = (replace-quoted-field $new_content "hash" $new_hash)
 
     $"($new_content)\n" | save -f $file
@@ -159,6 +210,28 @@ def update-package [file: string] {
                 print $"  ✓ cargoHash updated to ($expected)"
             } else {
                 print '  ⚠ could not parse cargoHash from build output, showing first 20 lines:'
+                $stderr | lines | first 20 | each {|l| print $"  ($l)" }
+            }
+        }
+    }
+
+    if ($content | str contains "npmDepsHash") {
+        print $"  checking npmDepsHash ..."
+        let pname = (extract-field $content "pname")
+        let result = (do -i { nix build $".#($pname)" --no-link } | complete)
+        if ($result.exit_code == 0) {
+            print $"  ✓ npmDepsHash already correct"
+        } else {
+            let stderr = ($result.stderr | str trim)
+            let npm_match = ($stderr | parse -r 'got:\s*sha256-(?<g>[^\s]+)')
+            let expected = if not ($npm_match | is-empty) { $"sha256-($npm_match | first | get g)" } else { null }
+            if $expected != null {
+                let new_content = (open --raw $file)
+                let new_content = (replace-quoted-field $new_content "npmDepsHash" $expected)
+                $"($new_content)\n" | save -f $file
+                print $"  ✓ npmDepsHash updated to ($expected)"
+            } else {
+                print '  ⚠ could not parse npmDepsHash from build output, showing first 20 lines:'
                 $stderr | lines | first 20 | each {|l| print $"  ($l)" }
             }
         }
