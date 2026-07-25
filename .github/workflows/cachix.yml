@@ -1,4 +1,4 @@
-wame Cachix
+name: Cachix
 
 on:
   workflow_dispatch:
