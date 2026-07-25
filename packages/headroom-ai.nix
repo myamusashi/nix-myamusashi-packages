@@ -20,7 +20,7 @@ python3.pkgs.buildPythonPackage rec {
 
     cargoDeps = rustPlatform.fetchCargoVendor {
         inherit pname version src;
-        hash = "sha256-7+ul+rco4HvI3ar6Y9JvfBiFem8IeBwnBEGUcj/d9xU=";
+        hash = "sha256-bSBtv1CUP2NjZujQSsAgPpeFYd28O5Ea1FXKu6ZRcvs=";
     };
 
     nativeBuildInputs = [

@@ -88,19 +88,18 @@ def extract-field [content: string, key: string] {
     }
 }
 
-# Replace the quoted value on the (single) line whose key matches `^\s*key\s*=\s*"`.
-# Anchoring on line-start + key avoids `hash` accidentally matching inside `cargoHash`.
+# Replace the quoted value on the FIRST line whose key matches `^\s*key\s*=\s*"`.
+# Only replaces the first match to avoid overwriting nested hashes (e.g. the hash
+# inside cargoDeps, or a second `hash` for a separate fetcher).
 def replace-quoted-field [content: string, key: string, new_value: string] {
     let anchored = ('^\s*' + $key + '\s*=\s*"')
     let escaped_value = ($new_value | str replace -a '$' '$$')
-    $content
-    | lines
-    | each {|line|
-        if ($line =~ $anchored) {
-            ($line | str replace -r '"[^"]*"' $"\"($escaped_value)\"")
-        } else {
-            $line
-        }
+    let lines = ($content | lines)
+    let idx = ($lines | enumerate | where {|it| ($it.item =~ $anchored)} | first | get index)
+    if $idx == null { return $content }
+    $lines
+    | update $idx {|line|
+        $line | str replace -r '"[^"]*"' $"\"($escaped_value)\""
     }
     | str join "\n"
 }
