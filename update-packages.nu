@@ -43,13 +43,12 @@ def gh-headers [] {
 }
 
 def gh-latest-release-tag [owner: string, repo: string] {
-    # Primary: list tags via git/refs/tags; GitHub returns them sorted by push
-    # date (newest last), which reflects actual tags more reliably than
-    # /releases/latest (only returns curated releases, may miss newer tags).
+    # Fetch all tags and pick the highest version using semantic sort
+    # (git/refs/tags returns by push date, not version — can't trust order).
     try {
         let refs = (http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)/git/refs/tags")
         let tags = ($refs | each {|r| ($r.ref | str replace "refs/tags/" "") })
-        $tags | last
+        ($tags | str join "\n") | ^sort -V | lines | last
     } catch {
         # fallback: /releases/latest
         let release = (http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)/releases/latest")
@@ -66,7 +65,8 @@ def gh-default-branch-sha [owner: string, repo: string] {
 
 def gitea-latest-tag [domain: string, owner: string, repo: string] {
     let tags = (http get $"https://($domain)/api/v1/repos/($owner)/($repo)/tags")
-    ($tags | sort-by created_at -n | last).name
+    let names = ($tags | each {|t| $t.name })
+    ($names | str join "\n") | ^sort -V | lines | last
 }
 
 def gitea-default-branch-sha [domain: string, owner: string, repo: string] {
