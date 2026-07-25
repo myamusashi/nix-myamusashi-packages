@@ -45,6 +45,9 @@ python3.pkgs.buildPythonPackage rec {
         uvicorn
         orjson
         httpx
+        h2
+        hyperframe
+        hpack
         openai
         mcp
         magika
