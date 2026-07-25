@@ -229,23 +229,64 @@ def update-package [file: string] {
     if ($content | str contains "npmDepsHash") {
         print $"  checking npmDepsHash ..."
         let pname = (extract-field $content "pname")
-        let result = (do -i { nix build $".#($pname)" --no-link } | complete)
-        if ($result.exit_code == 0) {
-            print $"  ✓ npmDepsHash already correct"
-        } else {
-            let stderr = ($result.stderr | str trim)
-            let npm_match = ($stderr | parse -r 'got:\s*sha256-(?<g>[^\s]+)')
-            let expected = if not ($npm_match | is-empty) { $"sha256-($npm_match | first | get g)" } else { null }
-            if $expected != null {
-                let new_content = (open --raw $file)
-                let new_content = (replace-quoted-field $new_content "npmDepsHash" $expected)
-                $"($new_content)\n" | save -f $file
-                print $"  ✓ npmDepsHash updated to ($expected)"
+        let pkg_dest = $"packages/($pname)/package-lock.json"
+        mut lockfile = ([
+            $"packages/($pname)/package-lock.json",
+            $"packages/($pname)/npm-shrinkwrap.json",
+        ] | where {|p| ($p | path exists) } | first)
+
+        # Extract source archive to check for a lockfile
+        let tmpdir = (mktemp -d)
+        print $"  extracting source to ($tmpdir) ..."
+        ^curl -fsSL $archive_url | ^tar -xz -C $tmpdir --strip-components=1
+        let src_lockfile = ([
+            $"($tmpdir)/package-lock.json",
+            $"($tmpdir)/npm-shrinkwrap.json"
+        ] | where {|p| ($p | path exists) } | first)
+
+        if ($lockfile == null) {
+            if ($src_lockfile != null) {
+                # Found in source but not vendored — copy it to our tree
+                $lockfile = $pkg_dest
+                mkdir ($lockfile | path dirname)
+                cp $src_lockfile $lockfile
+                print "  copied lockfile from source into package tree"
             } else {
-                print '  ⚠ could not parse npmDepsHash from build output, showing first 20 lines:'
-                $stderr | lines | first 20 | each {|l| print $"  ($l)" }
+                # Repo excludes lockfile — generate it with npm install
+                print "  no lockfile in source, running npm install --package-lock-only ..."
+                let package_json = $"($tmpdir)/package.json"
+                if ($package_json | path exists) {
+                    ^npm --prefix $tmpdir install --package-lock-only | complete
+                    let generated = $"($tmpdir)/package-lock.json"
+                    if ($generated | path exists) {
+                        $lockfile = $pkg_dest
+                        mkdir ($lockfile | path dirname)
+                        cp $generated $lockfile
+                        print "  generated and copied package-lock.json into package tree"
+                    } else {
+                        print "  ⚠ npm install did not produce a lockfile, skipping npmDepsHash"
+                        rm -rf $tmpdir
+                        return
+                    }
+                } else {
+                    print "  ⚠ no package.json in source, skipping npmDepsHash"
+                    rm -rf $tmpdir
+                    return
+                }
             }
         }
+
+        let result = (nix run nixpkgs#prefetch-npm-deps -- $lockfile | complete)
+        if ($result.exit_code == 0) {
+            let expected = ($result.stdout | str trim)
+            let new_content = (open --raw $file)
+            let new_content = (replace-quoted-field $new_content "npmDepsHash" $expected)
+            $"($new_content)\n" | save -f $file
+            print $"  ✓ npmDepsHash updated to ($expected)"
+        } else {
+            print $"  ⚠ prefetch-npm-deps failed: ($result.stderr | str trim)"
+        }
+        rm -rf $tmpdir
     }
 }
 
