@@ -1,4 +1,4 @@
-name: Cachix
+wame Cachix
 
 on:
   workflow_dispatch:
@@ -28,6 +28,15 @@ jobs:
           name: myamusashi
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
+      - name: Install nushell
+        run: nix profile install nixpkgs#nushell
+
+      - name: Update local packages
+        run: |
+          if [ -f ./update-packages.nu ]; then
+            nu ./update-packages.nu
+          fi
+
       - name: Build all packages
         env:
           NIXPKGS_ALLOW_UNFREE: 1
@@ -35,3 +44,11 @@ jobs:
           nix eval --impure --json .#packages.x86_64-linux --apply 'x: builtins.attrNames x' \
             | jq -r '.[]' \
             | xargs -I {} nix build --impure ".#{}" --no-link --print-out-paths
+
+      - name: Commit updates
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add flake.lock packages/
+          git diff --staged --quiet || git commit -m "chore: push new version (if found) or cache"
+          git push
