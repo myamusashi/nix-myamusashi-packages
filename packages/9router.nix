@@ -26,12 +26,17 @@ buildNpmPackage rec {
         runHook preInstall
 
         mkdir -p $out/lib/9router/app
+        shopt -s dotglob
         cp -r .next/standalone/* $out/lib/9router/app/
+        shopt -u dotglob
         cp custom-server.js $out/lib/9router/app/
         cp cli/cli.js $out/lib/9router/
         cp cli/package.json $out/lib/9router/
         cp -r cli/hooks $out/lib/9router/
         cp -r cli/src $out/lib/9router/
+
+        mkdir -p $out/lib/9router/node_modules
+        cp -r node_modules/* $out/lib/9router/node_modules/
 
         mkdir -p $out/bin
         ln -s $out/lib/9router/cli.js $out/bin/9router
