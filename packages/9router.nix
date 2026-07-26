@@ -28,7 +28,11 @@ buildNpmPackage rec {
         mkdir -p $out/lib/9router/app
         shopt -s dotglob
         cp -r .next/standalone/* $out/lib/9router/app/
+        cp -r .next/standalone/. $out/lib/9router/app/
+        cp -r .next/static $out/lib/9router/app/.next/static
         shopt -u dotglob
+
+        cp -r public $out/lib/9router/app/public
         cp custom-server.js $out/lib/9router/app/
         cp cli/cli.js $out/lib/9router/
         cp cli/package.json $out/lib/9router/
