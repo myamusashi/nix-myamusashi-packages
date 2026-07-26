@@ -90,60 +90,16 @@
         };
     };
 
-    outputs = inputs @ {
-        flake-parts,
-        aerothemeplasma-nix,
-        neovim-nightly-overlay,
-        wl-screenrec-fork,
-        ...
-    }:
+    outputs = inputs @ {flake-parts, ...}:
         flake-parts.lib.mkFlake {inherit inputs;} {
             systems = [
                 "x86_64-linux"
                 "aarch64-linux"
             ];
 
-            perSystem = {
-                pkgs,
-                system,
-                ...
-            }: let
-                atpPkgs = aerothemeplasma-nix.packages.${system} or {};
-                pkgsWithNeovim = pkgs.extend neovim-nightly-overlay.overlays.default;
-                wlScrnFork = wl-screenrec-fork.packages.${system}.default;
-                input_hyprland = inputs.hyprland.packages.${system}.hyprland;
-            in {
-                formatter = pkgs.alejandra;
-
-                packages =
-                    (pkgs.lib.packagesFromDirectoryRecursive {
-                        inherit (pkgs) callPackage;
-                        directory = ./packages;
-                    })
-                    // {inherit (pkgsWithNeovim) neovim;}
-                    // atpPkgs
-                    // { wl-screenrec-fork = wlScrnFork; }
-                    // {
-                        hypr-dynamic-cursors = pkgs.callPackage ./packages/hypr-dynamic-cursors.nix {
-                            hyprland = input_hyprland;
-                        };
-                        hyprland-scroll-overview = pkgs.callPackage ./packages/hyprland-scroll-overview.nix {
-                            hyprland = input_hyprland;
-                        };
-                    };
-
-                devShells.default = pkgs.mkShell {
-                    buildInputs = with pkgs; [
-                        alejandra
-                        nil
-                        statix
-                        nixd
-                        nushell
-                    ];
-                    shellHook = ''
-                        echo "Nix packages development environment"
-                    '';
-                };
-            };
+            imports = [
+                ./modules/packages.nix
+                ./modules/devshell.nix
+            ];
         };
 }

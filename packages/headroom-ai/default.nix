@@ -60,7 +60,7 @@ python3.pkgs.buildPythonPackage rec {
     ];
 
     postFixup = ''
-        wrapProgram $out/bin/headroom --prefix PATH : ${lib.makeBinPath [ ast-grep ]}
+        wrapProgram $out/bin/headroom --prefix PATH : ${lib.makeBinPath [ast-grep]}
     '';
 
     dontCheckRuntimeDeps = true;

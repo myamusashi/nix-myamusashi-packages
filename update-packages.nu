@@ -293,9 +293,9 @@ def update-package [file: string] {
 def main [...names: string] {
     let pkg_dir = "packages"
     let files = if ($names | is-empty) {
-        (ls $"($pkg_dir)/*.nix" | get name)
+        (ls $"($pkg_dir)/*/default.nix" | get name)
     } else {
-        $names | each {|n| $"($pkg_dir)/($n).nix" }
+        $names | each {|n| $"($pkg_dir)/($n)/default.nix" }
     }
 
     for file in $files {

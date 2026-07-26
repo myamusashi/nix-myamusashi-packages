@@ -8,13 +8,13 @@
 }:
 stdenv.mkDerivation rec {
     pname = "hyprland-scroll-overview";
-    version = "unstable-fdbf1923";
+    version = "unstable-44a4b651";
 
     src = fetchFromGitHub {
         owner = "myamusashi";
         repo = pname;
-        rev = "fdbf19236b9607287122fbde15a04e39137d15ff";
-        hash = "sha256-KzrYGBO64U8up5yZzuID82VZ1CLQ+4pM3A121aTd5aI=";
+        rev = "44a4b6511cad7a55711b2b99c42fb06005d1a901";
+        hash = "sha256-Y6NLiZnEXX83UVYMsU41+hq+q0xabvQbmi4LOXI+pZU=";
     };
 
     inherit (hyprland) buildInputs;

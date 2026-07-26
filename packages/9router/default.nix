@@ -17,7 +17,7 @@ buildNpmPackage rec {
     npmDepsHash = "sha256-duddNBnN33e4LtmiFy1lLOzLLdzlJr9kSJ/wBseIlow=";
 
     postPatch = ''
-        cp ${./9router/package-lock.json} package-lock.json
+        cp ${./package-lock.json} package-lock.json
         substituteInPlace src/app/layout.js \
             --replace-fail 'import { Inter } from "next/font/google";' 'const Inter = () => ({ variable: "--font-inter", subsets: ["latin"] });'
     '';
