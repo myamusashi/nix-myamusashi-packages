@@ -25,8 +25,6 @@ buildNpmPackage rec {
     installPhase = ''
         runHook preInstall
 
-        npm prune --omit=dev
-
         mkdir -p $out/lib/9router/app
         shopt -s dotglob
         cp -r .next/standalone/* $out/lib/9router/app/
