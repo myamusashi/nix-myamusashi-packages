@@ -9,8 +9,8 @@ stdenvNoCC.mkDerivation rec {
     version = "unstable-29d10069";
 
     src = fetchFromGitHub {
-        owner = "myamusashi";
-        repo = "hypr-dynamic-cursors";
+        owner = "VirtCode";
+        repo = pname;
         rev = "29d10069fb288dd6c63971b772542be18f6a38de";
         hash = "sha256-CihuLSp7WNZWrus6dva/0wqmpdVNaTjp3WsYmSzDfkU=";
     };
