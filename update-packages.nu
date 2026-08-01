@@ -136,7 +136,7 @@ def update-package [file: string] {
     }
 
     let version_value = (extract-field $content "version")
-    let is_tagged = not ($version_value | str starts-with "unstable-")
+    let is_tagged = ($version_value != null) and (not ($version_value | str starts-with "unstable-"))
 
     mut new_version = ""
     mut archive_ref = ""       # ref/tag used in the archive URL (full sha or tag name)
@@ -207,7 +207,36 @@ def update-package [file: string] {
     if ($content | str contains "cargoHash") {
         print $"  checking cargoHash ..."
         let pname = (extract-field $content "pname")
-        let result = (do -i { nix build $".#($pname)" --no-link } | complete)
+        let is_dep = ($file | str contains "/deps/")
+        let result = if $is_dep {
+            # Dep files (e.g. packages/Qcm/deps/*.nix) aren't exposed as .#<pname>;
+            # build them directly via a temp expression + callPackage instead.
+            let tmp = "/tmp/update-dep.nix"
+            let root = (pwd)
+            let system = (^uname -m | str trim)
+            let system = match $system {
+                "x86_64" => "x86_64-linux"
+                "aarch64" => "aarch64-linux"
+                "arm64" => "aarch64-linux"
+                "i686" => "i686-linux"
+                _ => $"($system)-linux"
+            }
+            let nix_tpl = 'let
+  flake = builtins.getFlake __ROOT__;
+  pkgs = flake.inputs.nixpkgs.legacyPackages.__SYSTEM__;
+in
+  pkgs.callPackage (import __FILE__) {}
+'
+            let nix_src = ($nix_tpl
+                | str replace "__ROOT__" $"\"($root)\""
+                | str replace "__SYSTEM__" $system
+                | str replace "__FILE__" $"\"($file | path expand)\"")
+            $nix_src | save -f $tmp
+            $nix_src | save -f $tmp
+            (do -i { nix build --impure --no-link -f $tmp } | complete)
+        } else {
+            (do -i { nix build $".#($pname)" --no-link } | complete)
+        }
         if ($result.exit_code == 0) {
             print $"  ✓ cargoHash already correct"
         } else {
@@ -293,9 +322,24 @@ def update-package [file: string] {
 def main [...names: string] {
     let pkg_dir = "packages"
     let files = if ($names | is-empty) {
-        (ls $"($pkg_dir)/*/default.nix" | get name)
+        # Recursively collect every .nix file under packages/, including deps/
+        (^find $pkg_dir -name "*.nix" -type f | lines | sort)
     } else {
-        $names | each {|n| $"($pkg_dir)/($n)/default.nix" }
+        $names | each {|n|
+            if ($"($pkg_dir)/($n)" | path exists) {
+                # path under packages/ (e.g. Qcm/deps/qr-code-generator.nix)
+                $"($pkg_dir)/($n)"
+            } else if ($"($pkg_dir)/($n).nix" | path exists) {
+                # flat name without dir (e.g. csskit)
+                $"($pkg_dir)/($n).nix"
+            } else if ($n | path exists) {
+                # full path given
+                $n
+            } else {
+                # package dir (e.g. csskit or Qcm/deps/qr-code-generator)
+                $"($pkg_dir)/($n)/default.nix"
+            }
+        }
     }
 
     for file in $files {

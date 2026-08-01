@@ -7,16 +7,16 @@
 }:
 rustPlatform.buildRustPackage rec {
     pname = "csskit";
-    version = "unstable-81c9273e";
+    version = "unstable-c4ada357";
 
     src = fetchFromGitHub {
         owner = "csskit";
         repo = "csskit";
-        rev = "81c9273e472333947f90035d2bb6391c913db0cd";
-        hash = "sha256-im+KBaNp2OquQT0ySFBx/csg7qj+sWFu7EnTzBo1c30=";
+        rev = "c4ada3570cd869611e24440f661bac5105d0e59d";
+        hash = "sha256-l52cAQcptrFwF4kexDi0LzMC0LUmKwQB+Cw0QcxInnU=";
     };
 
-    cargoHash = "sha256-mWpZPNahVmGsgjBnX4Qhde2/3Mbslx8k7QmHmA1XcFs=";
+    cargoHash = "sha256-1PNvptZOKG+JjFEIS2MZJGKhLVgzuTzuxGbdqpPcz68=";
 
     nativeBuildInputs = [pkg-config];
     buildInputs = [openssl];
