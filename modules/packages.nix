@@ -1,8 +1,4 @@
-{
-    inputs,
-    lib,
-    ...
-}: let
+{inputs, ...}: let
     inherit
         (inputs)
         hyprland
