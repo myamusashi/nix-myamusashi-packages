@@ -2,6 +2,7 @@
     lib,
     stdenv,
     fetchFromGitHub,
+    fetchgit,
     cacert,
     unicode-emoji,
     unicode-character-database,
@@ -181,6 +182,15 @@ in
                 sdl3
                 simdutf
                 (skia.overrideAttrs (prev: {
+                    version = "148-unstable-2026-06-23";
+
+                    src = fetchgit {
+                        url = "https://skia.googlesource.com/skia.git";
+                        # Tip of the chrome/m$version branch
+                        rev = "46f2e16555cac1211f4087cf24728fd741ac6495";
+                        hash = "sha256-vpd/W0C8zT+wzShdJYdd18GmNp/TklqF7bGZxfIaDDM=";
+                    };
+
                     gnFlags =
                         prev.gnFlags
                         ++ [
