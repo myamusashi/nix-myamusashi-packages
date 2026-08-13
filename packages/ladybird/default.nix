@@ -87,7 +87,7 @@ in
 
         cargoDeps = rustPlatform.fetchCargoVendor {
             inherit (finalAttrs) src;
-            hash = "";
+            hash = "sha256-2asgV8IT3QKXvPezmP7VP+idLGDR/jfUa38/mErm7VI=";
         };
 
         patches = [
