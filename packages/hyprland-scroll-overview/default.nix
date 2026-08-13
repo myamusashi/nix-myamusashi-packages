@@ -13,8 +13,8 @@ stdenv.mkDerivation rec {
     src = fetchFromGitHub {
         owner = "myamusashi";
         repo = pname;
-        rev = "3c1d22921b19608e76044dda32c58d7be7399c9c";
-        hash = "sha256-kt7H67dL0XIjdRE0PeGQHdHmfbjuLyfkeXjUJehQ18M=";
+        rev = "f58817e89b9d82de0b3f889c586f9b6154099d3d";
+        hash = "sha256-57TiTdZAgyLvTwP4mKQ5XaguM7TyR6E8H0nnf9uzrTM=";
     };
 
     inherit (hyprland) buildInputs;

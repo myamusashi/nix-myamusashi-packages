@@ -179,6 +179,7 @@ in
                 openssl
                 qt6Packages.qtbase
                 qt6Packages.qtmultimedia
+                qt6Packages.qtpositioning
                 sdl3
                 simdutf
                 (skia.overrideAttrs (prev: {
