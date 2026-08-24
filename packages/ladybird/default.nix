@@ -98,8 +98,6 @@ in
         ];
 
         postPatch = ''
-            sed -i '/iconutil/d' UI/CMakeLists.txt
-
             perl -0pi -e \
               's/find_package\(ICU 78\.[0-9]+ EXACT REQUIRED COMPONENTS data i18n uc\)/find_package(ICU ${icu78.version} EXACT REQUIRED COMPONENTS data i18n uc)/ or die "ICU dependency not found\n"' \
               Meta/CMake/check_for_dependencies.cmake
@@ -232,33 +230,17 @@ in
                 "-DCMAKE_INSTALL_LIBEXECDIR=libexec"
             ];
 
-        # FIXME: Add an option to -DENABLE_QT=ON on macOS to use Qt rather than Cocoa for the GUI
-
         # ld: [...]/OESVertexArrayObject.cpp.o: undefined reference to symbol 'glIsVertexArrayOES'
         # ld: [...]/libGL.so.1: error adding symbols: DSO missing from command line
         # https://github.com/LadybirdBrowser/ladybird/issues/371#issuecomment-2616415434
         env.NIX_LDFLAGS = "-lGL -lfontconfig";
 
-        postInstall = lib.optionalString stdenv.hostPlatform.isDarwin ''
-            mkdir -p $out/Applications $out/bin
-            mv $out/bundle/Ladybird.app $out/Applications
-        '';
-
-        # Only Ladybird and WebContent need wrapped, if Qt is enabled.
-        # On linux we end up wraping some non-Qt apps, like headless-browser.
-        dontWrapQtApps = stdenv.hostPlatform.isDarwin;
-
         # Remove once upstream reads the trust store before sandboxing
         # (https://github.com/LadybirdBrowser/ladybird/pull/10256).
-        postFixup =
-            lib.optionalString stdenv.hostPlatform.isLinux ''
-                wrapProgram "$out/bin/Ladybird" \
-                  --add-flags "--certificate=${cacert}/etc/ssl/certs/ca-bundle.crt"
-            ''
-            + lib.optionalString stdenv.hostPlatform.isDarwin ''
-                wrapProgram "$out/Applications/Ladybird.app/Contents/MacOS/Ladybird" \
-                  --add-flags "--certificate=${cacert}/etc/ssl/certs/ca-bundle.crt"
-            '';
+        postFixup = ''
+            wrapProgram "$out/bin/Ladybird" \
+              --add-flags "--certificate=${cacert}/etc/ssl/certs/ca-bundle.crt"
+        '';
 
         passthru.tests = {
             nixosTest = nixosTests.ladybird;
@@ -292,12 +274,7 @@ in
                 jk
                 schembriaiden
             ];
-            platforms = [
-                "x86_64-linux"
-                "aarch64-linux"
-                "aarch64-darwin"
-            ];
+            platforms = ["x86_64-linux"];
             mainProgram = "Ladybird";
-            broken = stdenv.hostPlatform.isDarwin;
         };
     })
