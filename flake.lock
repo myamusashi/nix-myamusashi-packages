@@ -2438,11 +2438,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1786279336,
-        "narHash": "sha256-74X5Kty+4d1WKJhR4hkTRXooocRO+k2VGtcQYRy38qY=",
+        "lastModified": 1787535471,
+        "narHash": "sha256-izn+aMFynqsiwoLR+li0seAjOCFs+EGlVgCMy6qyGUM=",
         "owner": "myamusashi",
         "repo": "wl-screenrec",
-        "rev": "0d23ae192bb6b6e365cb9c79bd711a6637c0e853",
+        "rev": "23500cce9ed2aba6c9cbb40187bcda2f99d4f835",
         "type": "github"
       },
       "original": {
