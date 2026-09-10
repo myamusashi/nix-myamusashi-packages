@@ -2,6 +2,7 @@
     inherit
         (inputs)
         hyprland
+        php-lsp
         aerothemeplasma-nix
         neovim-nightly-overlay
         wl-screenrec-fork
@@ -37,6 +38,7 @@ in {
 
         atpPkgs = aerothemeplasma-nix.packages.${system} or {};
 
+        phplsp = php-lsp.packages.${system}.default;
         wlScrnFork = wl-screenrec-fork.packages.${system}.default;
     in {
         formatter = pkgs.alejandra;
@@ -48,6 +50,9 @@ in {
             })
             // {inherit (pkgsWithNeovim) neovim;}
             // atpPkgs
-            // {wl-screenrec-fork = wlScrnFork;};
+            // {
+                wl-screenrec-fork = wlScrnFork;
+                php-lsp = phplsp;
+            };
     };
 }
