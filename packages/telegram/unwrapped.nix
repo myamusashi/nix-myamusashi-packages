@@ -14,6 +14,7 @@
     lz4,
     xxhash,
     ffmpeg_6,
+    pangocairo,
     protobuf,
     openal-soft,
     minizip-ng-compat,
@@ -67,6 +68,7 @@ stdenv.mkDerivation (finalAttrs: {
         tl-expected
         rnnoise
         tg_owt
+        pangocairo
         microsoft-gsl
         boost
         ada
