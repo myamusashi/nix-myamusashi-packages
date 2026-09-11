@@ -11,6 +11,7 @@
     kdePackages,
     tdlib,
     tg_owt ? callPackage ./tg_owt.nix {inherit stdenv;},
+    tlottie ? callPackage ./tlottie.nix {},
     lz4,
     xxhash,
     ffmpeg_6,
@@ -68,6 +69,7 @@ stdenv.mkDerivation (finalAttrs: {
         tl-expected
         rnnoise
         tg_owt
+        tlottie
         pango
         microsoft-gsl
         boost
@@ -92,7 +94,7 @@ stdenv.mkDerivation (finalAttrs: {
     ];
 
     passthru = {
-        inherit tg_owt;
+        inherit tg_owt tlottie;
         updateScript = nix-update-script {};
     };
 
