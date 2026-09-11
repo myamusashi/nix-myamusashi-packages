@@ -33,6 +33,7 @@ stdenv.mkDerivation (finalAttrs: {
             qt6.qtsvg
             kdePackages.kimageformats
             qt6.qtwayland
+            qt6.qtlottie
         ]
         ++ lib.optionals withWebkit [
             glib-networking
