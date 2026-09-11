@@ -76,6 +76,7 @@ stdenv.mkDerivation (finalAttrs: {
         (tdlib.override {tde2eOnly = true;})
         protobuf
         qt6.qtwayland
+        qt6.qtlottie
         kdePackages.kcoreaddons
         hunspell
     ];
