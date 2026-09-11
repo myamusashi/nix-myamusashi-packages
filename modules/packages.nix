@@ -11,12 +11,17 @@
     discoverPackages = {
         callPackage,
         directory,
+        exclude ? [
+            "9router"
+            "headroom-ai"
+        ],
     }: let
         entries = builtins.readDir directory;
         isPkg = name: type:
             type
             == "directory"
-            && builtins.pathExists (directory + "/${name}/default.nix");
+            && builtins.pathExists (directory + "/${name}/default.nix")
+            && !(builtins.elem name exclude);
         pkgNames = builtins.filter (n: isPkg n entries.${n}) (builtins.attrNames entries);
     in
         builtins.listToAttrs (map (name: {
@@ -38,7 +43,11 @@ in {
 
         atpPkgs = aerothemeplasma-nix.packages.${system} or {};
 
-        phplsp = php-lsp.packages.${system}.default;
+        pkgsWithPhplsp = pkgs.extend (import ../overlays/php-lsp.nix {
+            php-lsp-src = php-lsp.outPath;
+        });
+
+        phplsp = pkgsWithPhplsp.php-lsp;
         wlScrnFork = wl-screenrec-fork.packages.${system}.default;
     in {
         formatter = pkgs.alejandra;
