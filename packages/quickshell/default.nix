@@ -24,13 +24,13 @@
 }:
 stdenv.mkDerivation (finalAttrs: {
     pname = "quickshell";
-    version = "unstable-43d4fa9e";
+    version = "unstable-2d3b3e9c";
 
     src = fetchFromGitHub {
         owner = "quickshell-mirror";
         repo = "quickshell";
-        rev = "43d4fa9e883cb03239b3d578c9c57070f4fbd281";
-        hash = "sha256-bv5gar+ZAXZCJH7UOv0eRFILKt5RKA/3px/XbVR98Cg=";
+        rev = "2d3b3e9c70ef380dff751b61d334dc88df016c29";
+        hash = "sha256-6SUZyyALo19heYPa/Xmu2H4zV+wvdfVX4fTcqbgHRnI=";
     };
 
     nativeBuildInputs = [

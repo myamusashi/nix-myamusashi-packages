@@ -6,13 +6,13 @@
 }:
 stdenvNoCC.mkDerivation rec {
     pname = "hypr-dynamic-cursors";
-    version = "unstable-e62e326e";
+    version = "unstable-b9739b1d";
 
     src = fetchFromGitHub {
         owner = "VirtCode";
         repo = pname;
-        rev = "e62e326e6302f82d933c885d0df1d8ccb9830093";
-        hash = "sha256-VNA0EGCQCPcedIDv82VKnm94cJzgErONQgkrkYp4ldc=";
+        rev = "b9739b1db4a48616d66af29239ab0fe2756d28f6";
+        hash = "sha256-v+7e4T412K3Hi/qb+v7sZh2/2k1jFB9AY4AusVXr58I=";
     };
 
     inherit (hyprland) buildInputs;

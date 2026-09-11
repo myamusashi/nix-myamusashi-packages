@@ -16,13 +16,13 @@
 }:
 stdenvNoCC.mkDerivation rec {
     pname = "app2unit";
-    version = "unstable-df91c757";
+    version = "unstable-47e23ec6";
 
     src = fetchFromGitHub {
         owner = "Vladimir-csp";
         repo = "app2unit";
         tag = "v${version}";
-        hash = "sha256-jUAjcpR4IszvmqWAIjZo0rWZt9yydCe3xH4X+mJ5O8k=";
+        hash = "sha256-TIY+/9ekGub+10uyqXy5aYU+2NLysMtaQnD1PIjBCFA=";
     };
 
     nativeBuildInputs = [makeWrapper];

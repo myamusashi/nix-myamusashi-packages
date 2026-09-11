@@ -57,7 +57,7 @@
     # header on the include path, mirroring Ladybird's own vcpkg overlay-port.
     wuffsHeader = fetchzip {
         url = "https://github.com/google/wuffs-mirror-release-c/archive/refs/tags/v0.3.4.tar.gz";
-        hash = "sha256-V7inWJqH7Q4Ac/ZB//7XHrpgfAYUPBxWBerBem6Q/Kk=";
+        hash = "sha256-p2m3uhV3NjLUsf63/MJKrmbyETYTAu5NyZDxwog6pTE=";
     };
 
     # Ladybird's AK/kmalloc.cpp calls mimalloc's `mi_heap_get_default()`, which was
@@ -65,7 +65,7 @@
     # mimalloc 2.2.7 via vcpkg.json, so build against the matching 2.x series rather
     # than the nixpkgs default (3.x). Remove once Ladybird supports mimalloc 3.x.
     mimalloc2 = mimalloc.overrideAttrs {
-        version = "2.2.7";
+        version = "win-m4";
         src = fetchFromGitHub {
             owner = "microsoft";
             repo = "mimalloc";
@@ -81,7 +81,7 @@ in
         src = fetchFromGitHub {
             owner = "LadybirdBrowser";
             repo = "ladybird";
-            rev = "6c29e9b78b5c9e9f04b0158db9efc7c5cc75eb04";
+            rev = "win-m4";
             hash = "sha256-e4BuniyhsBIKUq2mBBVAyex8BzzTo99JAeuD9WCZuYM=";
         };
 
