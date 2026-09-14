@@ -92,6 +92,10 @@
             url = "github:hyprwm/Hyprland";
             inputs.nixpkgs.follows = "nixpkgs";
         };
+        omp = {
+            url = "github:can1357/oh-my-pi?rev=be6cb8217cd4c1dafcc86793ae5d809ea4d7396a";
+            inputs.nixpkgs.follows = "nixpkgs";
+        };
     };
 
     outputs = inputs @ {flake-parts, ...}:

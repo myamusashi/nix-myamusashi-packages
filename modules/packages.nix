@@ -6,6 +6,7 @@
         aerothemeplasma-nix
         neovim-nightly-overlay
         wl-screenrec-fork
+        omp
         ;
 
     discoverPackages = {
@@ -47,6 +48,7 @@ in {
             php-lsp-src = php-lsp.outPath;
         });
 
+        omp = omp.packages.${system}.default;
         phplsp = pkgsWithPhplsp.php-lsp;
         wlScrnFork = wl-screenrec-fork.packages.${system}.default;
     in {
@@ -62,6 +64,7 @@ in {
             // {
                 wl-screenrec-fork = wlScrnFork;
                 php-lsp = phplsp;
+                omp = omp;
             };
     };
 }
