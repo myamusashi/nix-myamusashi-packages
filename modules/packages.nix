@@ -48,7 +48,7 @@ in {
             php-lsp-src = php-lsp.outPath;
         });
 
-        omp = omp.packages.${system}.default;
+        ompPkgs = omp.packages.${system}.default;
         phplsp = pkgsWithPhplsp.php-lsp;
         wlScrnFork = wl-screenrec-fork.packages.${system}.default;
     in {
@@ -64,7 +64,7 @@ in {
             // {
                 wl-screenrec-fork = wlScrnFork;
                 php-lsp = phplsp;
-                omp = omp;
+                omp = ompPkgs;
             };
     };
 }
