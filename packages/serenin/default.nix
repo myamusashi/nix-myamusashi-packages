@@ -8,6 +8,8 @@
     wrapGAppsHook4,
     autoPatchelfHook,
     glib,
+    glib-networking,
+    gsettings-desktop-schemas,
     gtk4,
     webkitgtk_6_0,
     cairo,
@@ -58,6 +60,8 @@ rustPlatform.buildRustPackage rec {
 
     buildInputs = [
         glib
+        glib-networking,
+        gsettings-desktop-schemas,
         gtk4
         webkitgtk_6_0
         cairo
