@@ -15,6 +15,7 @@
         exclude ? [
             "9router"
             "headroom-ai"
+            "hyprland-scroll-overview"
         ],
     }: let
         entries = builtins.readDir directory;

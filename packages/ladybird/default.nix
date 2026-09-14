@@ -57,7 +57,7 @@
     # header on the include path, mirroring Ladybird's own vcpkg overlay-port.
     wuffsHeader = fetchzip {
         url = "https://github.com/google/wuffs-mirror-release-c/archive/refs/tags/v0.3.4.tar.gz";
-        hash = "sha256-p2m3uhV3NjLUsf63/MJKrmbyETYTAu5NyZDxwog6pTE=";
+        hash = "sha256-V7inWJqH7Q4Ac/ZB//7XHrpgfAYUPBxWBerBem6Q/Kk=";
     };
 
     # Ladybird's AK/kmalloc.cpp calls mimalloc's `mi_heap_get_default()`, which was
