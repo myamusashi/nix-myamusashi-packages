@@ -1,10 +1,14 @@
 {
     lib,
-    rustPlatform,
+    stdenv,
     fetchFromGitHub,
+    rustPlatform,
     pkg-config,
     cmake,
     makeWrapper,
+    swift,
+    swiftpm,
+    apple-sdk_15,
     wrapGAppsHook4,
     autoPatchelfHook,
     glib,
@@ -21,21 +25,27 @@
     libxkbcommon,
     wayland,
     vulkan-loader,
+    libGL,
+    libGLX,
+    libglvnd,
     alsa-lib,
     gst_all_1,
-    xorg,
+    libX11,
+    libXi,
+    libXrandr,
+    libXcursor,
     bubblewrap,
     xdg-dbus-proxy,
 }:
 rustPlatform.buildRustPackage rec {
     pname = "serein";
-    version = "1.0.0-nightly.20260916.27";
+    version = "1.0.0-nightly.20260916.34";
 
     src = fetchFromGitHub {
         owner = "ViceVerse-cz";
         repo = "Serein";
         tag = "v${version}";
-        hash = "sha256-SPwUzO9a8zszRtupYj55o+xnSQdqYfDYWbTTUrf5sDU=";
+        hash = "sha256-nQw552R+KWi2ishnWpd7k57eo2AT5wsM5D/2q0Spcjc=";
     };
 
     cargoLock = {
@@ -50,47 +60,68 @@ rustPlatform.buildRustPackage rec {
         "serein"
     ];
 
-    nativeBuildInputs = [
-        pkg-config
-        cmake
-        makeWrapper
-        wrapGAppsHook4
-        autoPatchelfHook
-    ];
+    nativeBuildInputs =
+        [
+            pkg-config
+            cmake
+            makeWrapper
+        ]
+        ++ lib.optionals stdenv.hostPlatform.isLinux [
+            wrapGAppsHook4
+            autoPatchelfHook
+        ]
+        ++ lib.optionals stdenv.hostPlatform.isDarwin [
+            swift
+            swiftpm
+        ];
 
-    buildInputs = [
-        glib
-        glib-networking
-        gsettings-desktop-schemas
-        gtk4
-        webkitgtk_6_0
-        cairo
-        pango
-        gdk-pixbuf
-        graphene
-        libsoup_3
-        wayland
-        libxkbcommon
-        xorg.libX11
-        xorg.libXi
-        xorg.libXrandr
-        xorg.libXcursor
-        fontconfig
-        vulkan-loader
-        alsa-lib
-        gst_all_1.gstreamer
-        gst_all_1.gst-plugins-base
-        gst_all_1.gst-plugins-good
-        gst_all_1.gst-libav
-    ];
+    dontUseSwiftpmBuild = true;
+    dontUseSwiftpmCheck = true;
 
-    runtimeDependencies = [
+    buildInputs =
+        lib.optionals stdenv.hostPlatform.isLinux [
+            glib
+            glib-networking
+            gsettings-desktop-schemas
+            gtk4
+            webkitgtk_6_0
+            cairo
+            pango
+            gdk-pixbuf
+            graphene
+            libsoup_3
+            wayland
+            libxkbcommon
+            libX11
+            libXi
+            libXrandr
+            libXcursor
+            fontconfig
+            vulkan-loader
+            libGL
+            libGLX
+            libglvnd
+            alsa-lib
+            gst_all_1.gstreamer
+            gst_all_1.gst-plugins-bad
+            gst_all_1.gst-plugins-base
+            gst_all_1.gst-plugins-good
+            gst_all_1.gst-libav
+        ]
+        ++ lib.optionals stdenv.hostPlatform.isDarwin [
+            apple-sdk_15
+        ];
+
+    runtimeDependencies = lib.optionals stdenv.hostPlatform.isLinux [
         vulkan-loader
+        libGL
+        libGLX
+        libglvnd
     ];
 
     doCheck = false;
 
-    preFixup = ''
+    preFixup = lib.optionalString stdenv.hostPlatform.isLinux ''
         gappsWrapperArgs+=(
           --prefix PATH : "${
             lib.makeBinPath [
@@ -100,6 +131,7 @@ rustPlatform.buildRustPackage rec {
         }"
           --prefix GST_PLUGIN_SYSTEM_PATH : "${
             lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" [
+                gst_all_1.gst-plugins-bad
                 gst_all_1.gst-plugins-base
                 gst_all_1.gst-plugins-good
                 gst_all_1.gst-libav
@@ -108,21 +140,28 @@ rustPlatform.buildRustPackage rec {
         )
     '';
 
-    # Desktop integration from the repo's own packaging/linux tree.
-    postInstall = ''
-        install -Dm444 ${src}/packaging/linux/serein.desktop \
-          $out/share/applications/org.serein.desktop.desktop
-        substituteInPlace $out/share/applications/org.serein.desktop.desktop \
-          --replace-fail "Exec=serein" "Exec=$out/bin/serein"
-        for theme_dir in ${src}/packaging/linux/hicolor/*; do
-          size=$(basename "$theme_dir")
-          for icon in "$theme_dir"/apps/*; do
-            if [ -f "$icon" ]; then
-              install -Dm444 "$icon" "$out/share/icons/hicolor/$size/apps/$(basename "$icon")"
-            fi
-          done
-        done
-    '';
+    postInstall =
+        lib.optionalString stdenv.hostPlatform.isLinux ''
+            install -Dm444 ${src}/packaging/linux/serein.desktop \
+              $out/share/applications/org.serein.desktop.desktop
+            substituteInPlace $out/share/applications/org.serein.desktop.desktop \
+              --replace-fail "Exec=serein" "Exec=$out/bin/serein"
+
+            for theme_dir in ${src}/packaging/linux/hicolor/*; do
+              size=$(basename "$theme_dir")
+              for icon in "$theme_dir"/apps/*; do
+                if [ -f "$icon" ]; then
+                  install -Dm444 "$icon" "$out/share/icons/hicolor/$size/apps/$(basename "$icon")"
+                fi
+              done
+            done
+        ''
+        + lib.optionalString stdenv.hostPlatform.isDarwin ''
+            mkdir -p "$out/Applications/Serein.app/Contents/MacOS" "$out/Applications/Serein.app/Contents/Resources"
+            install -Dm444 ${src}/packaging/macos/Info.plist "$out/Applications/Serein.app/Contents/Info.plist"
+            install -Dm444 ${src}/packaging/macos/Serein.icns "$out/Applications/Serein.app/Contents/Resources/Serein.icns"
+            ln -s "$out/bin/serein" "$out/Applications/Serein.app/Contents/MacOS/serein"
+        '';
 
     meta = with lib; {
         description = "Tiny, performant, native Discord client written in Rust (egui/wgpu)";
@@ -131,7 +170,7 @@ rustPlatform.buildRustPackage rec {
             mit
             asl20
         ];
-        platforms = platforms.linux;
+        platforms = platforms.linux ++ platforms.darwin;
         mainProgram = "serein";
     };
 }
