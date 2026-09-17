@@ -23,6 +23,7 @@
     libsoup_3,
     fontconfig,
     libxkbcommon,
+    libpulseaudio,
     wayland,
     vulkan-loader,
     libGL,
@@ -98,6 +99,7 @@ rustPlatform.buildRustPackage rec {
             libXcursor
             fontconfig
             vulkan-loader
+            libpulseaudio
             libGL
             libGLX
             libglvnd
