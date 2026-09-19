@@ -1,8 +1,8 @@
 {
     lib,
     stdenv,
-    fetchFromGitHub,
     rustPlatform,
+    fetchFromGitHub,
     pkg-config,
     cmake,
     makeWrapper,
@@ -23,14 +23,15 @@
     libsoup_3,
     fontconfig,
     libxkbcommon,
-    libpulseaudio,
     wayland,
     vulkan-loader,
     libGL,
     libGLX,
+    libpulseaudio,
     libglvnd,
     alsa-lib,
     gst_all_1,
+    pipewire,
     libX11,
     libXi,
     libXrandr,
@@ -40,13 +41,13 @@
 }:
 rustPlatform.buildRustPackage rec {
     pname = "serein";
-    version = "1.0.0-nightly.20260918.39";
+    version = "1.0.0-nightly.20260919.40";
 
     src = fetchFromGitHub {
         owner = "ViceVerse-cz";
         repo = "Serein";
         tag = "v${version}";
-        hash = "sha256-wEBY3r9FBlVNvZ+wzW+W9r5Y6PbSllg8GyYi9NlfiW8=";
+        hash = "sha256-DSq0hfVYFRauNNVmRdGjgL+V3WmE9Q3GbSthCDLiPbg=";
     };
 
     cargoLock = {
@@ -104,6 +105,7 @@ rustPlatform.buildRustPackage rec {
             libGLX
             libglvnd
             alsa-lib
+            pipewire
             gst_all_1.gstreamer
             gst_all_1.gst-plugins-bad
             gst_all_1.gst-plugins-base
@@ -131,7 +133,7 @@ rustPlatform.buildRustPackage rec {
                 xdg-dbus-proxy
             ]
         }"
-          --prefix GST_PLUGIN_SYSTEM_PATH : "${
+          --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "${
             lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" [
                 gst_all_1.gst-plugins-bad
                 gst_all_1.gst-plugins-base
