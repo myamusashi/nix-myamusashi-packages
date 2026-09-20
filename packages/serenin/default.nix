@@ -53,7 +53,7 @@ rustPlatform.buildRustPackage rec {
     cargoLock = {
         lockFile = "${src}/Cargo.lock";
         outputHashes = {
-            "ecolor-0.36.2" = "sha256-AhZEKazwb9qN/Ykq8O6Xo+ymfskszxqskboiK4omOVA=";
+            "ecolor-0.36.2" = "sha256-xg1kYNeZe3hLHks+Oxh8RDXPCP6LZjsV3FxIWyfeWbg=";
         };
     };
 
