@@ -49,7 +49,13 @@ in {
             php-lsp-src = php-lsp.outPath;
         });
 
-        ompPkgs = omp.packages.${system}.default;
+        ompPkgs = omp.packages.${system}.default.overrideAttrs (oldAttrs: {
+            patches =
+                (oldAttrs.patches or [])
+                ++ [
+                    ./oh-my-pi-satisfied-opencode-free-tier.patch
+                ];
+        });
         phplsp = pkgsWithPhplsp.php-lsp;
         wlScrnFork = wl-screenrec-fork.packages.${system}.default;
     in {

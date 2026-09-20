@@ -2150,11 +2150,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1787372347,
-        "narHash": "sha256-Foo41OtooHMiBITAFKdOhitmjrMZqcGy1epJNz7sNQ4=",
+        "lastModified": 1789370898,
+        "narHash": "sha256-QBlvSGth1NfAWw7iePOzFlrz0/pX6CfkFCcPALdySNI=",
         "owner": "ryoppippi",
         "repo": "nix-bun",
-        "rev": "fee8f233ad9409be44259b4f428f83ecb2812e37",
+        "rev": "48e887d7955c1c05b8d4627ed39bafe4bf2455a7",
         "type": "github"
       },
       "original": {
@@ -2237,17 +2237,16 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1788606846,
-        "narHash": "sha256-i8tsKhSzWEQPKqP/DBfFFZGYRfnHYDsoqkxp7xSyY4I=",
+        "lastModified": 1789846573,
+        "narHash": "sha256-sfyOWuxYaqc7IA6coKg7aknIwrl4G25ysQKEPpAAtEs=",
         "owner": "can1357",
         "repo": "oh-my-pi",
-        "rev": "be6cb8217cd4c1dafcc86793ae5d809ea4d7396a",
+        "rev": "836048d81e088b4cddcd023780d6d769920e8525",
         "type": "github"
       },
       "original": {
         "owner": "can1357",
         "repo": "oh-my-pi",
-        "rev": "be6cb8217cd4c1dafcc86793ae5d809ea4d7396a",
         "type": "github"
       }
     },

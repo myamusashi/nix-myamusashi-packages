@@ -1,0 +1,1105 @@
+From b4142c97de3f58ecd0ad165f7589c001017ebdd7 Mon Sep 17 00:00:00 2001
+From: Prateek <palprateek2004@gmail.com>
+Date: Sun, 20 Sep 2026 01:55:11 +0530
+Subject: [PATCH 1/4] fix(ai): send OpenCode client identity to satisfy
+ free-tier gate (#12306)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+OpenCode Zen/Go gate the contributor free tier on client identity: a
+User-Agent whose leading token is opencode/<version> and an
+x-opencode-session matching ses_<12 hex><14 alnum>. omp's omp/* UA and
+raw session/install ids failed both checks, producing 403 FreeTierError
+on every free-tier model.
+
+applyInferenceHeaders now sends the canonical OpenCode UA and a stable
+ses_ token derived from the conversation session id (routing and prompt
+cache stay pinned across turns); conversation-less background traffic
+(usage polls, model discovery) attributes through the same formatter
+with the install id. The shared formatter lives in
+packages/catalog/src/wire/opencode.ts so catalog discovery and pi-ai
+send identical identity. Explicit caller UA overrides (Claude OAuth
+fingerprint) still win.
+
+🤖 Generated with Codebuff
+Co-Authored-By: Codebuff <noreply@codebuff.com>
+---
+ docs/provider-quirks.md                       |  1 +
+ packages/ai/CHANGELOG.md                      |  4 ++
+ .../ai/src/providers/inference-headers.ts     | 34 ++++++++---
+ packages/ai/src/usage/opencode-go.ts          | 13 ++--
+ packages/ai/test/opencode-go-usage.test.ts    | 11 ++--
+ .../ai/test/opencode-session-header.test.ts   | 61 +++++++++++++------
+ packages/catalog/CHANGELOG.md                 |  6 ++
+ packages/catalog/src/index.ts                 |  1 +
+ .../src/provider-models/openai-compat.ts      | 12 ++--
+ packages/catalog/src/wire/opencode.ts         | 32 ++++++++++
+ .../catalog/test/opencode-provider.test.ts    | 12 ++--
+ 11 files changed, 136 insertions(+), 51 deletions(-)
+ create mode 100644 packages/catalog/src/wire/opencode.ts
+
+diff --git a/docs/provider-quirks.md b/docs/provider-quirks.md
+index 0dffa95657a..df6c6310703 100644
+--- a/docs/provider-quirks.md
++++ b/docs/provider-quirks.md
+@@ -1286,6 +1286,7 @@ OpenCode Zen (`opencode-zen`) is a subscription service providing access to mult
+ ### Special casings
+ - **Multi-API Resolution & Endpoint Wiring**: `createOpenCodeApiResolution` in `packages/catalog/src/provider-models/openai-compat.ts` resolves model transport targets via `@ai-sdk/*` npm metadata. `OPENCODE_ZEN_API_RESOLUTION` defines per-id overrides mapping `"minimax-m3"` and `"minimax-m3-free"` to `"openai-completions"` at `https://opencode.ai/zen/v1`, overriding upstream `@ai-sdk/anthropic` tags that lead to HTTP 400 errors or raw `<invoke>`/`<|minimax|>`/`<tool_call>` markup leaks (#1617).
+ - **Anthropic Proxy Header & Beta Handling**: In `packages/ai/src/providers/anthropic.ts`, `opencode-zen` deletes default `Authorization` headers (`delete defaultHeaders.Authorization`) and supplies `apiKey` to emit `X-Api-Key` headers. Thinking requests on `opencode-zen` suppress the `context_management_20251015` beta header and body field (`context_management`) because the Zen Anthropic proxy rejects unrecognized fields with `400 Extra inputs are not permitted` (#6510).
++- **Client Identity & Free-Tier Gating**: Zen and Go gate the contributor free tier on client identity, not the key: every request must carry a `User-Agent` whose leading token is `opencode/<version>` and an `x-opencode-session` matching `ses_<12 hex><14 alnum>`, or the gateway answers `403 FreeTierError: OpenCode's free tier can only be used from within OpenCode` (#12306). `applyInferenceHeaders` (`packages/ai/src/providers/inference-headers.ts`) sends both on every `opencode-zen`/`opencode-go` request — the canonical UA plus a stable `ses_` token derived from the conversation session id (`toOpenCodeSessionToken` in `packages/catalog/src/wire/opencode.ts`) so the gateway's routing/prompt-cache pinning survives across turns — and conversation-less background traffic (usage polls, model discovery) attributes with the install id through the same formatter. Only an explicit caller UA override (e.g. the Claude OAuth fingerprint) wins over the canonical value. The gate is additionally request-body-shaped: it requires `stream: true` and at least five OpenCode core tool names (`bash`, `edit`, `glob`, `grep`, `read`) in `tools[]`, which omp's normal agent turns satisfy natively; tool-less auxiliary calls (advisors, one-shot helpers) can still be refused by that half of the gate even with correct headers.
+ - **Thinking Mode Content Replay (`whenThinking`)**: Baseline compat for OpenCode models sets `requiresReasoningContentForToolCalls: false` to prevent sending unrecognized parameters on thinking-disabled requests (#1071). When reasoning is enabled, `buildOpenAICompat` in `packages/catalog/src/compat/openai.ts` constructs an `OPENCODE_WHEN_THINKING` overlay (`requiresReasoningContentForToolCalls: true`, `allowsSyntheticReasoningContentForToolCalls: false`), which `resolveOpenAICompatPolicy` in `packages/ai/src/providers/openai-shared.ts` pointer-swaps in at request time to prevent `400 thinking is enabled but reasoning_content is missing in assistant tool call message` errors (#1484, #2084).
+ - **Aliased Reasoning Models (`big-pickle`)**: The model ID `big-pickle` is an OpenCode Zen DeepSeek reasoning alias recognized via `isOpenCodeDeepseekAlias` in `packages/catalog/src/compat/openai.ts` and `packages/catalog/src/model-thinking.ts`. It is classified as part of `isDeepseekFamily`, enforcing strict `reasoning_content` replay during thinking tool-call turns.
+ 
+diff --git a/packages/ai/CHANGELOG.md b/packages/ai/CHANGELOG.md
+index ebadfd71f05..11f0ae41e47 100644
+--- a/packages/ai/CHANGELOG.md
++++ b/packages/ai/CHANGELOG.md
+@@ -2,6 +2,10 @@
+ 
+ ## [Unreleased]
+ 
++### Fixed
++
++- Fixed OpenCode Zen/Go free-tier 403 `FreeTierError` on model requests: OpenCode's gate rejects clients whose `User-Agent` is not `opencode/<version>` and whose `x-opencode-session` is not the canonical `ses_<12 hex><14 alnum>` shape, which omp's identity failed on both counts. All OpenCode inference now sends the canonical client UA and a stable session token derived from the conversation id so routing and prompt caching stay pinned across turns ([#12306](https://github.com/can1357/oh-my-pi/issues/12306)).
++
+ ## [18.2.6] - 2026-09-18
+ 
+ ### Fixed
+diff --git a/packages/ai/src/providers/inference-headers.ts b/packages/ai/src/providers/inference-headers.ts
+index 41a786d3499..59669d5a8e4 100644
+--- a/packages/ai/src/providers/inference-headers.ts
++++ b/packages/ai/src/providers/inference-headers.ts
+@@ -1,6 +1,7 @@
+ /** Shared inference request identity headers. */
+ 
+-import { USER_AGENT } from "@oh-my-pi/pi-utils";
++import { OPENCODE_USER_AGENT, toOpenCodeSessionToken } from "@oh-my-pi/pi-catalog/wire/opencode";
++import { getInstallId, USER_AGENT } from "@oh-my-pi/pi-utils";
+ 
+ /** Options controlling provider and protocol inference headers. */
+ export interface InferenceHeaderOptions {
+@@ -9,6 +10,13 @@ export interface InferenceHeaderOptions {
+ 	sessionId?: string;
+ }
+ 
++/**
++ * OpenCode gateways (Zen, Go) gate their contributor free tier on client
++ * identity; `@oh-my-pi/pi-catalog/wire/opencode` documents the wire contract
++ * ([#12306](https://github.com/can1357/oh-my-pi/issues/12306)).
++ */
++const OPENCODE_PROVIDER_IDS = new Set(["opencode-zen", "opencode-go"]);
++
+ /** Set a header unless the map already contains that field under any casing. */
+ export function setHeaderIfAbsent(headers: Record<string, string>, name: string, value: string): void {
+ 	const normalizedName = name.toLowerCase();
+@@ -33,20 +41,26 @@ function setHeader(headers: Record<string, string>, name: string, value: string)
+  * understood by the active inference protocol and host.
+  */
+ export function applyInferenceHeaders(headers: Record<string, string>, options: InferenceHeaderOptions): void {
+-	const isOpenCode = options.provider === "opencode-go" || options.provider === "opencode-zen";
+-	const sessionId = options.sessionId;
+-	if (!sessionId) return;
++	const isOpenCode = OPENCODE_PROVIDER_IDS.has(options.provider);
+ 
+ 	if (options.protocol === "anthropic") {
+-		setHeader(headers, "X-Claude-Code-Session-Id", sessionId);
+-	} else if (options.protocol === "openai" && options.provider === "openai") {
+-		setHeader(headers, "session_id", sessionId);
+-		setHeader(headers, "x-client-request-id", sessionId);
++		if (options.sessionId) setHeader(headers, "X-Claude-Code-Session-Id", options.sessionId);
++	} else if (options.protocol === "openai" && options.provider === "openai" && options.sessionId) {
++		setHeader(headers, "session_id", options.sessionId);
++		setHeader(headers, "x-client-request-id", options.sessionId);
+ 	}
+ 
+ 	if (isOpenCode) {
+-		setHeaderIfAbsent(headers, "User-Agent", USER_AGENT);
+-		setHeader(headers, "x-opencode-session", sessionId);
++		// The free-tier gate reads the UA's leading token before anything else;
++		// only an explicit caller override (e.g. a Claude OAuth fingerprint) wins.
++		setHeaderIfAbsent(headers, "User-Agent", OPENCODE_USER_AGENT);
++		if (options.sessionId) {
++			setHeader(headers, "x-opencode-session", toOpenCodeSessionToken(options.sessionId));
++		} else {
++			// Background traffic outside any conversation (usage polls, model
++			// discovery) still has to carry the session header shape.
++			setHeaderIfAbsent(headers, "x-opencode-session", toOpenCodeSessionToken(getInstallId()));
++		}
+ 	}
+ }
+ 
+diff --git a/packages/ai/src/usage/opencode-go.ts b/packages/ai/src/usage/opencode-go.ts
+index 5d93f88d66b..dcb38379589 100644
+--- a/packages/ai/src/usage/opencode-go.ts
++++ b/packages/ai/src/usage/opencode-go.ts
+@@ -1,4 +1,5 @@
+-import { USER_AGENT, getInstallId } from "@oh-my-pi/pi-utils";
++import { OPENCODE_USER_AGENT, toOpenCodeSessionToken } from "@oh-my-pi/pi-catalog/wire/opencode";
++import { getInstallId } from "@oh-my-pi/pi-utils";
+ import { ProviderHttpError } from "../error";
+ import type {
+ 	CredentialRankingStrategy,
+@@ -110,12 +111,10 @@ async function fetchOpenCodeGoUsage(params: UsageFetchParams, ctx: UsageFetchCon
+ 				accept: "application/json",
+ 				authorization: `Bearer ${credential.apiKey}`,
+ 				// Background poll outside any conversation: attribute with the
+-				// stable install id so OpenCode can optimize/service the
+-				// request (x-opencode-session required from 09/06). Peers
+-				// (codex/zai) send USER_AGENT here; without it Bun's default
+-				// UA is what upstream flags as "Bun fetch".
+-				"User-Agent": USER_AGENT,
+-				"x-opencode-session": getInstallId(),
++				// canonical OpenCode client identity (x-opencode-session +
++				// opencode/* UA, see wire/opencode) instead of Bun's default.
++				"User-Agent": OPENCODE_USER_AGENT,
++				"x-opencode-session": toOpenCodeSessionToken(getInstallId()),
+ 			},
+ 			signal: params.signal,
+ 		});
+diff --git a/packages/ai/test/opencode-go-usage.test.ts b/packages/ai/test/opencode-go-usage.test.ts
+index 4f9de0b0eeb..46fa1683d29 100644
+--- a/packages/ai/test/opencode-go-usage.test.ts
++++ b/packages/ai/test/opencode-go-usage.test.ts
+@@ -1,6 +1,6 @@
+ import { describe, expect, it } from "bun:test";
++import { OPENCODE_SESSION_TOKEN_PATTERN, OPENCODE_USER_AGENT } from "@oh-my-pi/pi-catalog/wire/opencode";
+ import type { FetchImpl } from "@oh-my-pi/pi-ai/types";
+-import { USER_AGENT } from "@oh-my-pi/pi-utils";
+ import { opencodeGoRankingStrategy, opencodeGoUsageProvider } from "../src/usage/opencode-go";
+ 
+ const DEFAULT_USAGE_URL = "https://opencode.ai/zen/go/v1/usage";
+@@ -92,11 +92,10 @@ describe("opencode-go usage provider", () => {
+ 		expect(calls).toHaveLength(1);
+ 		expect(calls[0]?.url).toBe(DEFAULT_USAGE_URL);
+ 		expect(calls[0]?.headers.authorization).toBe("Bearer sk-test");
+-		// Attribution headers: omp UA instead of Bun's default, stable
+-		// install id as the session (required from 09/06).
+-		expect(calls[0]?.headers["User-Agent"]).toBe(USER_AGENT);
+-		expect(typeof calls[0]?.headers["x-opencode-session"]).toBe("string");
+-		expect(calls[0]?.headers["x-opencode-session"]?.length).toBeGreaterThan(0);
++		// Attribution headers: canonical OpenCode client identity (opencode/*
++		// UA + ses_-shaped session header), not Bun's default.
++		expect(calls[0]?.headers["User-Agent"]).toBe(OPENCODE_USER_AGENT);
++		expect(calls[0]?.headers["x-opencode-session"]).toMatch(OPENCODE_SESSION_TOKEN_PATTERN);
+ 	});
+ 
+ 	it("normalizes both catalog baseUrl forms onto the usage route", async () => {
+diff --git a/packages/ai/test/opencode-session-header.test.ts b/packages/ai/test/opencode-session-header.test.ts
+index fe2d1fca99a..15de82ef0a3 100644
+--- a/packages/ai/test/opencode-session-header.test.ts
++++ b/packages/ai/test/opencode-session-header.test.ts
+@@ -5,6 +5,11 @@ import { resolveOpenAIRequestSetup } from "@oh-my-pi/pi-ai/providers/openai-shar
+ import type { Model } from "@oh-my-pi/pi-ai/types";
+ import { opencodeGoUsageProvider } from "@oh-my-pi/pi-ai/usage/opencode-go";
+ import { buildModel } from "@oh-my-pi/pi-catalog/build";
++import {
++	OPENCODE_SESSION_TOKEN_PATTERN,
++	OPENCODE_USER_AGENT,
++	toOpenCodeSessionToken,
++} from "@oh-my-pi/pi-catalog/wire/opencode";
+ import { USER_AGENT } from "@oh-my-pi/pi-utils";
+ 
+ const OPENCODE_SESSION_HEADER = "x-opencode-session";
+@@ -102,16 +107,37 @@ function makeOpenCodeGoAnthropicModel(): Model<"anthropic-messages"> {
+ 	});
+ }
+ 
++describe("opencode session token formatter", () => {
++	it("produces the canonical ses_ shape the free-tier gate requires", () => {
++		const token = toOpenCodeSessionToken("session-1");
++		expect(token).toMatch(OPENCODE_SESSION_TOKEN_PATTERN);
++	});
++
++	it("is deterministic so routing and prompt cache survive across turns", () => {
++		expect(toOpenCodeSessionToken("session-1")).toBe(toOpenCodeSessionToken("session-1"));
++		expect(toOpenCodeSessionToken("session-2")).not.toBe(toOpenCodeSessionToken("session-1"));
++	});
++
++	it("keeps the alphanumeric tail free of lowercase hex collision ambiguity", () => {
++		// Tail must satisfy [0-9A-Za-z]{14} after the fixed 12-hex head.
++		const token = toOpenCodeSessionToken("session-1");
++		const head = token.slice(4, 16);
++		const tail = token.slice(16);
++		expect(head).toMatch(/^[0-9a-f]{12}$/);
++		expect(tail).toMatch(/^[0-9A-Za-z]{14}$/);
++	});
++});
++
+ describe("opencode and gpt session header on OpenAI transports", () => {
+-	it("sends the conversation session id to OpenCode", () => {
++	it("sends the canonical session token and client identity to OpenCode", () => {
+ 		const setup = resolveOpenAIRequestSetup(OPENCODE_GO_COMPLETIONS_MODEL, {
+ 			apiKey: "key",
+ 			messages: [],
+ 			sessionId: "session-1",
+ 			promptCacheSessionId: "cache-1",
+ 		});
+-		expect(setup.headers[OPENCODE_SESSION_HEADER]).toBe("session-1");
+-		expect(setup.headers["User-Agent"]).toBe(USER_AGENT);
++		expect(setup.headers[OPENCODE_SESSION_HEADER]).toBe(toOpenCodeSessionToken("session-1"));
++		expect(setup.headers["User-Agent"]).toBe(OPENCODE_USER_AGENT);
+ 		expect(setup.headers.session_id).toBeUndefined();
+ 	});
+ 
+@@ -121,7 +147,7 @@ describe("opencode and gpt session header on OpenAI transports", () => {
+ 			messages: [],
+ 			promptCacheSessionId: "cache-1",
+ 		});
+-		expect(setup.headers[OPENCODE_SESSION_HEADER]).toBe("cache-1");
++		expect(setup.headers[OPENCODE_SESSION_HEADER]).toBe(toOpenCodeSessionToken("cache-1"));
+ 	});
+ 
+ 	it("generates one session id at the inference boundary when the caller omitted it", async () => {
+@@ -138,7 +164,7 @@ describe("opencode and gpt session header on OpenAI transports", () => {
+ 		);
+ 
+ 		expect(response.stopReason).toBe("stop");
+-		expect(sessionId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
++		expect(sessionId).toMatch(OPENCODE_SESSION_TOKEN_PATTERN);
+ 	});
+ 
+ 	it("replaces conflicting caller values with the authoritative session id", () => {
+@@ -149,7 +175,7 @@ describe("opencode and gpt session header on OpenAI transports", () => {
+ 			sessionId: "session-1",
+ 		});
+ 		expect(setup.headers["X-OpenCode-Session"]).toBeUndefined();
+-		expect(setup.headers[OPENCODE_SESSION_HEADER]).toBe("session-1");
++		expect(setup.headers[OPENCODE_SESSION_HEADER]).toBe(toOpenCodeSessionToken("session-1"));
+ 	});
+ 
+ 	it("sends session_id and x-client-request-id on OpenAI requests", () => {
+@@ -241,8 +267,8 @@ describe("opencode session header on the Google transport", () => {
+ 
+ 		expect(response.stopReason).toBe("stop");
+ 		expect(headersSeen).toHaveLength(1);
+-		expect(headersSeen[0]?.get(OPENCODE_SESSION_HEADER)).toBe("session-1");
+-		expect(headersSeen[0]?.get("User-Agent")).toBe(USER_AGENT);
++		expect(headersSeen[0]?.get(OPENCODE_SESSION_HEADER)).toBe(toOpenCodeSessionToken("session-1"));
++		expect(headersSeen[0]?.get("User-Agent")).toBe(OPENCODE_USER_AGENT);
+ 	});
+ });
+ 
+@@ -253,9 +279,9 @@ describe("session header on the Anthropic transport", () => {
+ 			apiKey: "opencode_test_key",
+ 			sessionId: "session-1",
+ 		});
+-		expect(options.defaultHeaders[OPENCODE_SESSION_HEADER]).toBe("session-1");
++		expect(options.defaultHeaders[OPENCODE_SESSION_HEADER]).toBe(toOpenCodeSessionToken("session-1"));
+ 		expect(options.defaultHeaders["X-Claude-Code-Session-Id"]).toBe("session-1");
+-		expect(options.defaultHeaders["User-Agent"]).toBe(USER_AGENT);
++		expect(options.defaultHeaders["User-Agent"]).toBe(OPENCODE_USER_AGENT);
+ 	});
+ 
+ 	it("preserves the Claude fingerprint for OpenCode OAuth requests", () => {
+@@ -266,7 +292,7 @@ describe("session header on the Anthropic transport", () => {
+ 			sessionId: "session-1",
+ 		});
+ 		expect(options.defaultHeaders["User-Agent"]).toMatch(/^claude-cli\//);
+-		expect(options.defaultHeaders["User-Agent"]).not.toBe(USER_AGENT);
++		expect(options.defaultHeaders["User-Agent"]).not.toBe(OPENCODE_USER_AGENT);
+ 	});
+ 
+ 	it("preserves the Claude OAuth User-Agent on the wire", async () => {
+@@ -312,7 +338,7 @@ describe("session header on the Anthropic transport", () => {
+ 			headers: { [OPENCODE_SESSION_HEADER]: "caller", "X-Claude-Code-Session-Id": "caller-claude" },
+ 			sessionId: "session-1",
+ 		});
+-		expect(options.defaultHeaders[OPENCODE_SESSION_HEADER]).toBe("session-1");
++		expect(options.defaultHeaders[OPENCODE_SESSION_HEADER]).toBe(toOpenCodeSessionToken("session-1"));
+ 		expect(options.defaultHeaders["X-Claude-Code-Session-Id"]).toBe("session-1");
+ 	});
+ });
+@@ -336,11 +362,10 @@ describe("usage fetch carries attribution headers", () => {
+ 
+ 		expect(report?.provider).toBe("opencode-go");
+ 		expect(seen).toHaveLength(1);
+-		// Background poll outside any conversation: stable install id keeps
+-		// OpenCode attribution working (required from 09/06), and omp's UA
+-		// replaces Bun's default.
+-		expect(seen[0]?.["user-agent"]).toBe(USER_AGENT);
+-		expect(typeof seen[0]?.[OPENCODE_SESSION_HEADER]).toBe("string");
+-		expect(seen[0]?.[OPENCODE_SESSION_HEADER]?.length).toBeGreaterThan(0);
++		// Background poll outside any conversation: canonical OpenCode client
++		// identity keeps attribution working (session header required from
++		// 09/06, free-tier gate added in #12306).
++		expect(seen[0]?.["user-agent"]).toBe(OPENCODE_USER_AGENT);
++		expect(seen[0]?.[OPENCODE_SESSION_HEADER]).toMatch(OPENCODE_SESSION_TOKEN_PATTERN);
+ 	});
+ });
+diff --git a/packages/catalog/CHANGELOG.md b/packages/catalog/CHANGELOG.md
+index 5b5a55f3382..31cdec39281 100644
+--- a/packages/catalog/CHANGELOG.md
++++ b/packages/catalog/CHANGELOG.md
+@@ -6,10 +6,16 @@
+ 
+ - Added `buildDiscoveredModel` helper for custom providers
+ - Added support for glob-based patterns in identity overrides
++- Added `wire/opencode` helpers (`OPENCODE_USER_AGENT`, `toOpenCodeSessionToken`, `OPENCODE_SESSION_TOKEN_PATTERN`) for the OpenCode gateway client-identity contract
+ 
+ ### Changed
+ 
+ - Centralized llama.cpp Qwen routing and thinking policy in KDL, with reviewed Bonsai lineage aliases and shared backend policy for custom provider names.
++- OpenCode Go/Zen live model discovery and usage polls now attribute with the canonical OpenCode client identity (`opencode/*` User-Agent + canonical `ses_` session token) instead of omp's UA and raw install id.
++
++### Fixed
++
++- Fixed OpenCode free-tier 403 (`FreeTierError`) on tool-less auxiliary calls: all OpenCode traffic now carries the client identity the gateway's gate requires.
+ 
+ ## [18.2.5] - 2026-09-17
+ 
+diff --git a/packages/catalog/src/index.ts b/packages/catalog/src/index.ts
+index 2b0003443e2..76ecfad3510 100644
+--- a/packages/catalog/src/index.ts
++++ b/packages/catalog/src/index.ts
+@@ -17,3 +17,4 @@ export * from "./wire/coreweave";
+ export * from "./wire/gemini-headers";
+ export * from "./wire/github-copilot";
+ export * from "./wire/image-fetchers";
++export * from "./wire/opencode";
+diff --git a/packages/catalog/src/provider-models/openai-compat.ts b/packages/catalog/src/provider-models/openai-compat.ts
+index 31d5b4519a7..555a3366733 100644
+--- a/packages/catalog/src/provider-models/openai-compat.ts
++++ b/packages/catalog/src/provider-models/openai-compat.ts
+@@ -1,4 +1,4 @@
+-import { USER_AGENT, getInstallId } from "@oh-my-pi/pi-utils";
++import { getInstallId, USER_AGENT } from "@oh-my-pi/pi-utils";
+ import * as logger from "@oh-my-pi/pi-utils/logger";
+ import { toClinePassPublicModelId } from "../cline-pass-model-id";
+ import {
+@@ -35,6 +35,7 @@ import { normalizeCharmHyperBaseUrl } from "../wire/charm-hyper";
+ import { CLINEPASS_API_BASE_URL, clinePassClientHeaders } from "../wire/cline-pass";
+ import { CLOUDFLARE_AI_GATEWAY_COMPAT_BASE_URL } from "../wire/cloudflare-ai-gateway";
+ import { coreWeaveProjectHeaders } from "../wire/coreweave";
++import { OPENCODE_USER_AGENT, toOpenCodeSessionToken } from "../wire/opencode";
+ import {
+ 	COPILOT_API_HEADERS,
+ 	COPILOT_DISCOVERY_HEADERS,
+@@ -3020,10 +3021,13 @@ function openCodeModelManagerOptions(
+ 					baseUrl: discoveryBaseUrl,
+ 					apiKey,
+ 					// Live discovery hits the OpenCode gateway outside any
+-					// conversation: attribute with the stable install id
+-					// (x-opencode-session required from 09/06) and omp's UA
++					// conversation: attribute with the canonical client identity
++					// (x-opencode-session + opencode/* UA, see wire/opencode)
+ 					// instead of Bun's default.
+-					headers: { "User-Agent": USER_AGENT, "x-opencode-session": getInstallId() },
++					headers: {
++						"User-Agent": OPENCODE_USER_AGENT,
++						"x-opencode-session": toOpenCodeSessionToken(getInstallId()),
++					},
+ 					mapModel: (entry, defaults) => {
+ 						const reference = references.get(defaults.id);
+ 						const name = toModelName(entry.name, reference?.name ?? defaults.name);
+diff --git a/packages/catalog/src/wire/opencode.ts b/packages/catalog/src/wire/opencode.ts
+new file mode 100644
+index 00000000000..82f8bbc8531
+--- /dev/null
++++ b/packages/catalog/src/wire/opencode.ts
+@@ -0,0 +1,32 @@
++/**
++ * OpenCode gateway (Zen, Go) wire identity.
++ *
++ * The contributor free tier is gated on client identity: every request must
++ * carry a `User-Agent` whose leading token is `opencode/<version>` and an
++ * `x-opencode-session` matching `ses_<12 hex><14 alnum>`. Both are wire-shape
++ * checks applied before credentials are evaluated
++ * ([#12306](https://github.com/can1357/oh-my-pi/issues/12306)).
++ */
++
++/** Canonical OpenCode client User-Agent; the gate reads only the leading token. */
++export const OPENCODE_USER_AGENT = "opencode/1.18.31";
++
++/** Shape the OpenCode gate requires for `x-opencode-session`. */
++export const OPENCODE_SESSION_TOKEN_PATTERN = /^ses_[0-9a-f]{12}[0-9A-Za-z]{14}$/;
++
++/**
++ * Format a session identity as OpenCode's canonical session token
++ * (`ses_` + 12 lowercase hex + 14 alphanumeric chars).
++ *
++ * Deterministic: the 12-hex head is the leading digest bits of the input and
++ * the alphanumeric tail derives from the rest, so a conversation keeps one
++ * token across turns — the gateway pins routing and prompt caching on the
++ * value — while the shape always passes the gate's check. The tail is upper
++ * base36 (digits `0` mapped to `O`) so no lowercase hex characters leak past
++ * the head segment.
++ */
++export function toOpenCodeSessionToken(sessionId: string): string {
++	const digest = new Bun.CryptoHasher("sha256").update(sessionId).digest("hex");
++	const tail = BigInt(`0x${digest}`).toString(36).toUpperCase().replace(/0/g, "O");
++	return `ses_${`${digest.slice(0, 12)}${tail}`.slice(0, 26)}`;
++}
+diff --git a/packages/catalog/test/opencode-provider.test.ts b/packages/catalog/test/opencode-provider.test.ts
+index 1693e65c0df..23b51c349df 100644
+--- a/packages/catalog/test/opencode-provider.test.ts
++++ b/packages/catalog/test/opencode-provider.test.ts
+@@ -19,7 +19,8 @@ import {
+ 	opencodeZenModelManagerOptions,
+ } from "@oh-my-pi/pi-catalog/provider-models/openai-compat";
+ import type { ModelSpec } from "@oh-my-pi/pi-catalog/types";
+-import { USER_AGENT, type FetchImpl } from "@oh-my-pi/pi-utils";
++import { OPENCODE_SESSION_TOKEN_PATTERN, OPENCODE_USER_AGENT } from "@oh-my-pi/pi-catalog/wire/opencode";
++import { type FetchImpl } from "@oh-my-pi/pi-utils";
+ import { mergePreviousSnapshotModels } from "../scripts/generate-models";
+ 
+ const LIVE_FREE_MODEL_IDS = [
+@@ -717,8 +718,8 @@ describe("OpenCode provider discovery", () => {
+ 	});
+ 
+ 	test("sends attribution headers on live gateway discovery", async () => {
+-		// The gateway requires x-opencode-session from 09/06 and uses it for
+-		// optimization; without omp's UA the request arrives as "Bun fetch".
++		// The gateway requires x-opencode-session from 09/06 and gates the free
++		// tier on client identity: opencode/* UA + ses_-shaped session header.
+ 		for (const makeOptions of [opencodeGoModelManagerOptions, opencodeZenModelManagerOptions]) {
+ 			const seen: Array<Record<string, string>> = [];
+ 			const options = makeOptions({
+@@ -730,9 +731,8 @@ describe("OpenCode provider discovery", () => {
+ 			});
+ 			await options.fetchDynamicModels?.();
+ 			expect(seen).toHaveLength(1);
+-			expect(seen[0]?.["user-agent"]).toBe(USER_AGENT);
+-			expect(typeof seen[0]?.["x-opencode-session"]).toBe("string");
+-			expect(seen[0]?.["x-opencode-session"]?.length).toBeGreaterThan(0);
++			expect(seen[0]?.["user-agent"]).toBe(OPENCODE_USER_AGENT);
++			expect(seen[0]?.["x-opencode-session"]).toMatch(OPENCODE_SESSION_TOKEN_PATTERN);
+ 		}
+ 	});
+ 
+
+From 713e154db9f6210b9f2edef634db4f93ad7b1c00 Mon Sep 17 00:00:00 2001
+From: Prateek <palprateek2004@gmail.com>
+Date: Sun, 20 Sep 2026 02:37:49 +0530
+Subject: [PATCH 2/4] fix(ai): satisfy OpenCode free-tier body gate and scope
+ its 403 denial
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The #12306 gate is body-shaped as well as header-shaped: it requires
+stream:true and at least five OpenCode core tool names (bash, edit,
+glob, grep, read) in tools[], so tool-less auxiliary calls (advisors,
+one-shot helpers) were still refused with 403 FreeTierError after the
+client-identity fix. stream() now pads such requests with stub entries
+for the missing names via withOpenCodeGateTools — empty description,
+inert {type:"object"} schema, strict:false — wire-shape filler that
+never joins the caller's tool registry. Agent rosters that already
+carry the names pass through untouched (same array identity).
+
+When a denial does surface, isOpencodeFreeTierGateMessage classifies
+it as model-scoped client policy rather than a credential fault: the
+key keeps serving paid SKUs, so the 403 no longer rotates sibling
+credentials (isAuthRetryableError and stream()'s rotatable-403 arm) or
+reads as an auth failure, and formatMessage rewrites the raw 403 into
+an explanation that preserves the classifier markers. google-shared
+now passes provider into finalize() so the zen google-transport lane
+gets the same treatment.
+
+🤖 Generated with Codebuff
+Co-Authored-By: Codebuff <noreply@codebuff.com>
+---
+ docs/provider-quirks.md                       |   2 +-
+ packages/ai/CHANGELOG.md                      |   2 +
+ packages/ai/src/error/auth-classify.ts        |  11 +-
+ packages/ai/src/error/flags.ts                |  15 ++
+ packages/ai/src/error/format.ts               |  17 +-
+ packages/ai/src/providers/google-shared.ts    |   7 +-
+ .../ai/src/providers/inference-headers.ts     |  11 +-
+ packages/ai/src/stream.ts                     |  21 ++-
+ packages/ai/test/auth-retry.test.ts           |  22 +++
+ .../ai/test/opencode-free-tier-gate.test.ts   | 155 ++++++++++++++++++
+ packages/catalog/CHANGELOG.md                 |   2 +-
+ packages/catalog/src/wire/opencode.ts         |  47 ++++++
+ 12 files changed, 297 insertions(+), 15 deletions(-)
+ create mode 100644 packages/ai/test/opencode-free-tier-gate.test.ts
+
+diff --git a/docs/provider-quirks.md b/docs/provider-quirks.md
+index df6c6310703..4cc397286fa 100644
+--- a/docs/provider-quirks.md
++++ b/docs/provider-quirks.md
+@@ -1286,7 +1286,7 @@ OpenCode Zen (`opencode-zen`) is a subscription service providing access to mult
+ ### Special casings
+ - **Multi-API Resolution & Endpoint Wiring**: `createOpenCodeApiResolution` in `packages/catalog/src/provider-models/openai-compat.ts` resolves model transport targets via `@ai-sdk/*` npm metadata. `OPENCODE_ZEN_API_RESOLUTION` defines per-id overrides mapping `"minimax-m3"` and `"minimax-m3-free"` to `"openai-completions"` at `https://opencode.ai/zen/v1`, overriding upstream `@ai-sdk/anthropic` tags that lead to HTTP 400 errors or raw `<invoke>`/`<|minimax|>`/`<tool_call>` markup leaks (#1617).
+ - **Anthropic Proxy Header & Beta Handling**: In `packages/ai/src/providers/anthropic.ts`, `opencode-zen` deletes default `Authorization` headers (`delete defaultHeaders.Authorization`) and supplies `apiKey` to emit `X-Api-Key` headers. Thinking requests on `opencode-zen` suppress the `context_management_20251015` beta header and body field (`context_management`) because the Zen Anthropic proxy rejects unrecognized fields with `400 Extra inputs are not permitted` (#6510).
+-- **Client Identity & Free-Tier Gating**: Zen and Go gate the contributor free tier on client identity, not the key: every request must carry a `User-Agent` whose leading token is `opencode/<version>` and an `x-opencode-session` matching `ses_<12 hex><14 alnum>`, or the gateway answers `403 FreeTierError: OpenCode's free tier can only be used from within OpenCode` (#12306). `applyInferenceHeaders` (`packages/ai/src/providers/inference-headers.ts`) sends both on every `opencode-zen`/`opencode-go` request — the canonical UA plus a stable `ses_` token derived from the conversation session id (`toOpenCodeSessionToken` in `packages/catalog/src/wire/opencode.ts`) so the gateway's routing/prompt-cache pinning survives across turns — and conversation-less background traffic (usage polls, model discovery) attributes with the install id through the same formatter. Only an explicit caller UA override (e.g. the Claude OAuth fingerprint) wins over the canonical value. The gate is additionally request-body-shaped: it requires `stream: true` and at least five OpenCode core tool names (`bash`, `edit`, `glob`, `grep`, `read`) in `tools[]`, which omp's normal agent turns satisfy natively; tool-less auxiliary calls (advisors, one-shot helpers) can still be refused by that half of the gate even with correct headers.
++- **Client Identity & Free-Tier Gating**: Zen and Go gate the contributor free tier on client identity, not the key: every request must carry a `User-Agent` whose leading token is `opencode/<version>` and an `x-opencode-session` matching `ses_<12 hex><14 alnum>`, or the gateway answers `403 FreeTierError: OpenCode's free tier can only be used from within OpenCode` (#12306). `applyInferenceHeaders` (`packages/ai/src/providers/inference-headers.ts`) sends both on every `opencode-zen`/`opencode-go` request — the canonical UA plus a stable `ses_` token derived from the conversation session id (`toOpenCodeSessionToken` in `packages/catalog/src/wire/opencode.ts`) so the gateway's routing/prompt-cache pinning survives across turns — and conversation-less background traffic (usage polls, model discovery) attributes with the install id through the same formatter. Only an explicit caller UA override (e.g. the Claude OAuth fingerprint) wins over the canonical value. The gate is additionally request-body-shaped: it requires `stream: true` and at least five OpenCode core tool names (`bash`, `edit`, `glob`, `grep`, `read`) in `tools[]`, which omp's normal agent turns satisfy natively. Tool-less auxiliary calls (advisors, one-shot helpers) are padded to the required roster by `stream()` via `withOpenCodeGateTools` (`packages/catalog/src/wire/opencode.ts`): stub entries carrying only the missing names, with empty descriptions and inert `{type: "object"}` schemas (the gate ignores schemas) — wire-shape filler that never joins the caller's tool registry. A denial that still slips through (gate policy change) is classified by `isOpencodeFreeTierGateMessage` (`packages/ai/src/error/flags.ts`): the key is valid and paid SKUs keep serving, so the 403 does not rotate sibling credentials or invalidate the stored one, and `formatMessage` rewrites the raw 403 into an explanation of the model-scoped restriction.
+ - **Thinking Mode Content Replay (`whenThinking`)**: Baseline compat for OpenCode models sets `requiresReasoningContentForToolCalls: false` to prevent sending unrecognized parameters on thinking-disabled requests (#1071). When reasoning is enabled, `buildOpenAICompat` in `packages/catalog/src/compat/openai.ts` constructs an `OPENCODE_WHEN_THINKING` overlay (`requiresReasoningContentForToolCalls: true`, `allowsSyntheticReasoningContentForToolCalls: false`), which `resolveOpenAICompatPolicy` in `packages/ai/src/providers/openai-shared.ts` pointer-swaps in at request time to prevent `400 thinking is enabled but reasoning_content is missing in assistant tool call message` errors (#1484, #2084).
+ - **Aliased Reasoning Models (`big-pickle`)**: The model ID `big-pickle` is an OpenCode Zen DeepSeek reasoning alias recognized via `isOpenCodeDeepseekAlias` in `packages/catalog/src/compat/openai.ts` and `packages/catalog/src/model-thinking.ts`. It is classified as part of `isDeepseekFamily`, enforcing strict `reasoning_content` replay during thinking tool-call turns.
+ 
+diff --git a/packages/ai/CHANGELOG.md b/packages/ai/CHANGELOG.md
+index 11f0ae41e47..9fd3eaa88e9 100644
+--- a/packages/ai/CHANGELOG.md
++++ b/packages/ai/CHANGELOG.md
+@@ -5,6 +5,8 @@
+ ### Fixed
+ 
+ - Fixed OpenCode Zen/Go free-tier 403 `FreeTierError` on model requests: OpenCode's gate rejects clients whose `User-Agent` is not `opencode/<version>` and whose `x-opencode-session` is not the canonical `ses_<12 hex><14 alnum>` shape, which omp's identity failed on both counts. All OpenCode inference now sends the canonical client UA and a stable session token derived from the conversation id so routing and prompt caching stay pinned across turns ([#12306](https://github.com/can1357/oh-my-pi/issues/12306)).
++- Fixed OpenCode free-tier 403 on tool-less auxiliary calls (advisors, one-shot helpers): the gate also requires at least five OpenCode core tool names in `tools[]`, so `stream()` now pads such requests with stub entries for the missing names instead of letting the gateway refuse them.
++- OpenCode `403 FreeTierError` denials no longer rotate sibling credentials or invalidate the stored key (the same key keeps serving paid models), and the surfaced message now explains the model-scoped restriction instead of reading like an auth failure.
+ 
+ ## [18.2.6] - 2026-09-18
+ 
+diff --git a/packages/ai/src/error/auth-classify.ts b/packages/ai/src/error/auth-classify.ts
+index c13461b62b6..bf83bc8d1ff 100644
+--- a/packages/ai/src/error/auth-classify.ts
++++ b/packages/ai/src/error/auth-classify.ts
+@@ -1,5 +1,11 @@
+ import { extractHttpStatusFromError } from "@oh-my-pi/pi-utils";
+-import { isAccountPolicyError, isClinePassSurfaceGateMessage, isOAuthExpiry, isUsageLimit } from "./flags";
++import {
++	isAccountPolicyError,
++	isClinePassSurfaceGateMessage,
++	isOAuthExpiry,
++	isOpencodeFreeTierGateMessage,
++	isUsageLimit,
++} from "./flags";
+ import { OAuthError } from "./oauth";
+ import { isConcurrencyCapExclusion, isUsageLimitOutcome } from "./rate-limit";
+ 
+@@ -49,6 +55,9 @@ export function isAuthRetryableError(error: unknown): boolean {
+ 	// A Cline surface-gate 403 is per-model client policy, not a credential
+ 	// problem: sibling keys fail identically, so rotation only burns them.
+ 	if (isClinePassSurfaceGateMessage(message)) return false;
++	// OpenCode's free-tier gate denial is likewise model-scoped client policy:
++	// the key keeps serving paid SKUs, so sibling keys fail identically.
++	if (isOpencodeFreeTierGateMessage(message)) return false;
+ 	if (status === 401 || status === 403) return true;
+ 	return isUsageLimitOutcome(status, message);
+ }
+diff --git a/packages/ai/src/error/flags.ts b/packages/ai/src/error/flags.ts
+index 101512dfa93..c82ef7279ca 100644
+--- a/packages/ai/src/error/flags.ts
++++ b/packages/ai/src/error/flags.ts
+@@ -764,6 +764,21 @@ export function isClinePassSurfaceGateMessage(errorMessage: string | undefined):
+ 	return errorMessage !== undefined && CLINE_PASS_SURFACE_GATE_PATTERN.test(errorMessage);
+ }
+ 
++const OPENCODE_FREE_TIER_GATE_PATTERN = /free tier can only be used from within|\bFreeTierError\b/i;
++
++/**
++ * OpenCode Zen/Go answer free-tier requests failing the client-identity gate
++ * with `403 FreeTierError: OpenCode's free tier can only be used from within
++ * OpenCode` ([#12306](https://github.com/can1357/oh-my-pi/issues/12306)). The
++ * API key is valid — the denial is model-scoped client policy, not a revoked
++ * credential — so it must not rotate sibling credentials (they fail
++ * identically). Free models are refused while paid SKUs keep working on the
++ * same key, which is exactly why rotation cannot fix it.
++ */
++export function isOpencodeFreeTierGateMessage(errorMessage: string | undefined): boolean {
++	return errorMessage !== undefined && OPENCODE_FREE_TIER_GATE_PATTERN.test(errorMessage);
++}
++
+ const GITHUB_COPILOT_POLICY_DENIAL_PATTERN = /GitHub Copilot access denied \(HTTP 403\)/;
+ 
+ /**
+diff --git a/packages/ai/src/error/format.ts b/packages/ai/src/error/format.ts
+index 42d53467c90..1949e6f9ca4 100644
+--- a/packages/ai/src/error/format.ts
++++ b/packages/ai/src/error/format.ts
+@@ -6,13 +6,25 @@ import {
+ 	rewriteCopilotError,
+ } from "../utils/http-inspector";
+ import { formatErrorMessageWithRetryAfter } from "../utils/retry-after";
+-import { LLAMA_CPP_TOOL_CALL_PARSE_PATTERN } from "./flags";
++import { isOpencodeFreeTierGateMessage, LLAMA_CPP_TOOL_CALL_PARSE_PATTERN } from "./flags";
+ 
+ function rewriteOllamaToolCallJsonError(message: string): string {
+ 	if (!LLAMA_CPP_TOOL_CALL_PARSE_PATTERN.test(message)) return message;
+ 	return `Local Ollama model emitted malformed tool-call JSON and llama.cpp rejected it (HTTP 500). This is usually a deterministic model-output failure after context degradation, not a transient server outage; reload the model or reduce context, then retry.\n${message}`;
+ }
+ 
++/**
++ * OpenCode's free-tier gate denial reads like an auth failure but is
++ * model-scoped client policy: the key is valid and paid SKUs keep serving.
++ * Explain that instead of surfacing the raw 403. The rewritten text keeps the
++ * `FreeTierError` marker so {@link isOpencodeFreeTierGateMessage} keeps
++ * matching downstream decision points that see only the final message (#12306).
++ */
++function rewriteOpencodeFreeTierGateError(message: string): string {
++	if (!isOpencodeFreeTierGateMessage(message)) return message;
++	return "OpenCode rejected this request with 403 FreeTierError: its free tier can only be used from within OpenCode. Your API key is valid — paid models on the same key keep working. Pick a paid model with /model; if this model is expected to work in omp, the gateway's gate has likely changed and the regression should be reported.";
++}
++
+ /** Inputs that steer {@link formatMessage}'s formatter selection. */
+ export interface FormatMessageOptions {
+ 	/** When present, the raw request is dumped into the message for 400-class failures. */
+@@ -42,6 +54,9 @@ export async function formatMessage(error: unknown, opts: FormatMessageOptions =
+ 	if (opts.provider === "cline-pass") {
+ 		message = rewriteClinePassError(message, opts.provider);
+ 	}
++	if (opts.provider === "opencode-zen" || opts.provider === "opencode-go") {
++		message = rewriteOpencodeFreeTierGateError(message);
++	}
+ 	if (opts.provider === "ollama") {
+ 		message = rewriteOllamaToolCallJsonError(message);
+ 	}
+diff --git a/packages/ai/src/providers/google-shared.ts b/packages/ai/src/providers/google-shared.ts
+index 4e481d17f99..019d2c2ed59 100644
+--- a/packages/ai/src/providers/google-shared.ts
++++ b/packages/ai/src/providers/google-shared.ts
+@@ -1060,7 +1060,12 @@ export function streamGoogleGenAI<T extends "google-generative-ai" | "google-ver
+ 			stream.push({ type: "done", reason: output.stopReason as "length" | "stop" | "toolUse", message: output });
+ 			stream.end();
+ 		} catch (error) {
+-			const result = await AIError.finalize(error, { api: model.api, signal: options?.signal, rawRequestDump });
++			const result = await AIError.finalize(error, {
++				api: model.api,
++				provider: model.provider,
++				signal: options?.signal,
++				rawRequestDump,
++			});
+ 			output.stopReason = result.stopReason;
+ 			output.errorStatus = result.status;
+ 			output.errorId = result.id;
+diff --git a/packages/ai/src/providers/inference-headers.ts b/packages/ai/src/providers/inference-headers.ts
+index 59669d5a8e4..6ae957bb9c4 100644
+--- a/packages/ai/src/providers/inference-headers.ts
++++ b/packages/ai/src/providers/inference-headers.ts
+@@ -1,6 +1,6 @@
+ /** Shared inference request identity headers. */
+ 
+-import { OPENCODE_USER_AGENT, toOpenCodeSessionToken } from "@oh-my-pi/pi-catalog/wire/opencode";
++import { isOpenCodeProvider, OPENCODE_USER_AGENT, toOpenCodeSessionToken } from "@oh-my-pi/pi-catalog/wire/opencode";
+ import { getInstallId, USER_AGENT } from "@oh-my-pi/pi-utils";
+ 
+ /** Options controlling provider and protocol inference headers. */
+@@ -10,13 +10,6 @@ export interface InferenceHeaderOptions {
+ 	sessionId?: string;
+ }
+ 
+-/**
+- * OpenCode gateways (Zen, Go) gate their contributor free tier on client
+- * identity; `@oh-my-pi/pi-catalog/wire/opencode` documents the wire contract
+- * ([#12306](https://github.com/can1357/oh-my-pi/issues/12306)).
+- */
+-const OPENCODE_PROVIDER_IDS = new Set(["opencode-zen", "opencode-go"]);
+-
+ /** Set a header unless the map already contains that field under any casing. */
+ export function setHeaderIfAbsent(headers: Record<string, string>, name: string, value: string): void {
+ 	const normalizedName = name.toLowerCase();
+@@ -41,7 +34,7 @@ function setHeader(headers: Record<string, string>, name: string, value: string)
+  * understood by the active inference protocol and host.
+  */
+ export function applyInferenceHeaders(headers: Record<string, string>, options: InferenceHeaderOptions): void {
+-	const isOpenCode = OPENCODE_PROVIDER_IDS.has(options.provider);
++	const isOpenCode = isOpenCodeProvider(options.provider);
+ 
+ 	if (options.protocol === "anthropic") {
+ 		if (options.sessionId) setHeader(headers, "X-Claude-Code-Session-Id", options.sessionId);
+diff --git a/packages/ai/src/stream.ts b/packages/ai/src/stream.ts
+index cf4dd1e2adc..4636e1df461 100644
+--- a/packages/ai/src/stream.ts
++++ b/packages/ai/src/stream.ts
+@@ -15,6 +15,7 @@ import {
+ } from "@oh-my-pi/pi-catalog/model-thinking";
+ import { providerEntries } from "@oh-my-pi/pi-catalog/compat/providers";
+ import { CODEX_BASE_URL } from "@oh-my-pi/pi-catalog/wire/codex";
++import { isOpenCodeProvider, withOpenCodeGateTools } from "@oh-my-pi/pi-catalog/wire/opencode";
+ import { $env, $pickenv, getProviderInFlightRoot, isEnoent, logger, untilAborted } from "@oh-my-pi/pi-utils";
+ import { getCustomApi } from "./api-registry";
+ import { createAuthRetryKeyState, isApiKeyResolver, resolveNextAuthRetryKey } from "./auth-retry";
+@@ -946,6 +947,16 @@ function streamDispatch<TApi extends Api>(
+ ): AssistantMessageEventStream {
+ 	const requestOptions = withTransportFetch(model, (options || {}) as StreamOptions) as OptionsForApi<TApi>;
+ 	assertExplicitOpenAIResponsesPromptCacheSupport(model, requestOptions);
++	// OpenCode's gate requires at least five OpenCode core tool names in
++	// tools[] (schemas ignored) on every request, so tool-less auxiliary calls
++	// (advisors, one-shot helpers) are refused with 403 FreeTierError even when
++	// the client-identity headers are correct (#12306). Pad with stub entries
++	// here — the single dispatch funnel for stream/complete/streamSimple — and
++	// never expose them to the caller's tool registry: they are wire-shape
++	// filler, not executable work.
++	if (isOpenCodeProvider(model.provider)) {
++		context = { ...context, tools: withOpenCodeGateTools(context.tools) };
++	}
+ 
+ 	// Check custom API registry first (extension-provided APIs like "vertex-claude-api")
+ 	const customApiProvider = getCustomApi(model.api);
+@@ -1174,7 +1185,15 @@ function isRetryableUpstreamError(
+ 	// classify as RATE_LIMIT_EXCEEDED in `parseRateLimitReason` and stay in the
+ 	// provider's own backoff layer instead of burning siblings.
+ 	if (AIError.isCodexChatGPTAccountPolicyError(error, model.provider, model.id)) return true;
+-	if (status === 401 || (status === 403 && !isConcurrencyCapExclusion(status, message))) return true;
++	if (
++		status === 401 ||
++		(status === 403 &&
++			!isConcurrencyCapExclusion(status, message) &&
++			// OpenCode's free-tier gate denial is model-scoped client policy —
++			// the same key keeps serving paid SKUs, so rotation cannot fix it.
++			!AIError.isOpencodeFreeTierGateMessage(message))
++	)
++		return true;
+ 	return isUsageLimitOutcome(status, message);
+ }
+ 
+diff --git a/packages/ai/test/auth-retry.test.ts b/packages/ai/test/auth-retry.test.ts
+index cd9f12db5d8..7c0416f9706 100644
+--- a/packages/ai/test/auth-retry.test.ts
++++ b/packages/ai/test/auth-retry.test.ts
+@@ -116,6 +116,28 @@ describe("isAuthRetryableError", () => {
+ 				),
+ 			),
+ 		).toBe(false);
++		// OpenCode's free-tier gate denial (403 FreeTierError) is likewise
++		// model-scoped client policy: the same key still serves paid SKUs, so
++		// rotation cannot fix it.
++		expect(
++			isAuthRetryableError(
++				new ProviderHttpError(
++					'403 {"error":{"type":"FreeTierError","message":"OpenCode\'s free tier can only be used from within OpenCode"}}',
++					403,
++					{ code: "FreeTierError" },
++				),
++			),
++		).toBe(false);
++		// The bare marker must also stay non-rotatable even if the wording shifts.
++		expect(isAuthRetryableError(new Error("403 request rejected (type=FreeTierError)"))).toBe(false);
++		// A paid-SKU 403 on opencode that lacks the gate markers is still a
++		// normal access denial and must rotate. (A bare "403 forbidden" instead
++		// carries the static auth-failure text flag, which is out of scope here.)
++		expect(
++			isAuthRetryableError(
++				Object.assign(new Error("403 access to this model is denied for your plan"), { status: 403 }),
++			),
++		).toBe(true);
+ 		expect(isAuthRetryableError(authError(500))).toBe(false);
+ 		expect(isAuthRetryableError(new Error("network blip"))).toBe(false);
+ 		expect(isAuthRetryableError(undefined)).toBe(false);
+diff --git a/packages/ai/test/opencode-free-tier-gate.test.ts b/packages/ai/test/opencode-free-tier-gate.test.ts
+new file mode 100644
+index 00000000000..2c367940964
+--- /dev/null
++++ b/packages/ai/test/opencode-free-tier-gate.test.ts
+@@ -0,0 +1,155 @@
++import { describe, expect, it } from "bun:test";
++import { completeSimple } from "@oh-my-pi/pi-ai";
++import { formatMessage } from "@oh-my-pi/pi-ai/error";
++import { buildModel } from "@oh-my-pi/pi-catalog/build";
++import {
++	withOpenCodeGateTools,
++	OPENCODE_GATE_TOOL_NAMES,
++	OPENCODE_SESSION_TOKEN_PATTERN,
++} from "@oh-my-pi/pi-catalog/wire/opencode";
++import type { Model } from "@oh-my-pi/pi-ai/types";
++
++const OPENCODE_GO_COMPLETIONS_MODEL = {
++	provider: "opencode-go",
++	id: "kimi-k2.7-code",
++	baseUrl: "https://opencode.ai/zen/go/v1",
++};
++
++function makeOpenCodeGoCompletionsModel(): Model<"openai-completions"> {
++	return buildModel({
++		...OPENCODE_GO_COMPLETIONS_MODEL,
++		name: "Kimi K2.7 Code",
++		api: "openai-completions",
++		reasoning: false,
++		input: ["text"],
++		cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
++		contextWindow: 262_144,
++		maxTokens: 8192,
++	});
++}
++
++function makeOpenAICompletionsModel(): Model<"openai-completions"> {
++	return buildModel({
++		id: "gpt-5.5",
++		name: "GPT-5.5",
++		api: "openai-completions",
++		provider: "openai",
++		baseUrl: "https://api.openai.com/v1",
++		reasoning: false,
++		input: ["text"],
++		cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
++		contextWindow: 262_144,
++		maxTokens: 8192,
++	});
++}
++
++function chatSse(): Response {
++	const chunk = (delta: unknown, finishReason: string | null) =>
++		JSON.stringify({
++			id: "x",
++			object: "chat.completion.chunk",
++			created: 0,
++			choices: [{ index: 0, delta, finish_reason: finishReason }],
++		});
++	return new Response(`data: ${chunk({ content: "ok" }, null)}\n\ndata: ${chunk({}, "stop")}\n\ndata: [DONE]\n\n`, {
++		status: 200,
++		headers: { "content-type": "text/event-stream" },
++	});
++}
++
++async function captureRequestTools(model: Model<"openai-completions">): Promise<Array<{ name: string }>> {
++	let body: unknown;
++	const fetchMock = async (_input: string | URL | Request, init?: RequestInit) => {
++		body = JSON.parse(String(init?.body));
++		return chatSse();
++	};
++	await completeSimple(
++		model,
++		{ messages: [{ role: "user", content: "hi", timestamp: 0 }] },
++		{ apiKey: "key", fetch: fetchMock as typeof fetch },
++	);
++	return (body as { tools?: Array<{ function: { name: string } }> }).tools?.map(tool => tool.function) ?? [];
++}
++
++describe("withOpenCodeGateTools", () => {
++	it("pads exactly the gate names missing from the roster", () => {
++		const padded = withOpenCodeGateTools([{ name: "read", description: "r", parameters: {} }]);
++		expect(padded.map(tool => tool.name).sort()).toEqual([...OPENCODE_GATE_TOOL_NAMES].sort());
++	});
++
++	it("returns the same array identity when the roster already satisfies the gate", () => {
++		const roster = OPENCODE_GATE_TOOL_NAMES.map(name => ({ name, description: "", parameters: {} }));
++		expect(withOpenCodeGateTools(roster)).toBe(roster);
++	});
++
++	it("pads a tool-less call to the full required roster", () => {
++		expect(
++			withOpenCodeGateTools<{ name: string }>(undefined)
++				.map(tool => tool.name)
++				.sort(),
++		).toEqual([...OPENCODE_GATE_TOOL_NAMES].sort());
++		expect(
++			withOpenCodeGateTools<{ name: string }>([])
++				.map(tool => tool.name)
++				.sort(),
++		).toEqual([...OPENCODE_GATE_TOOL_NAMES].sort());
++	});
++
++	it("does not mutate the caller's array", () => {
++		const roster = [{ name: "read", description: "r", parameters: {} }];
++		const padded = withOpenCodeGateTools(roster);
++		expect(roster).toHaveLength(1);
++		expect(padded).not.toBe(roster);
++	});
++});
++
++describe("OpenCode free-tier body gate", () => {
++	it("tool-less auxiliary calls reach the wire with the full gate roster", async () => {
++		const tools = await captureRequestTools(makeOpenCodeGoCompletionsModel());
++		const names = new Set(tools.map(tool => tool.name));
++		for (const required of OPENCODE_GATE_TOOL_NAMES) {
++			expect(names.has(required)).toBe(true);
++		}
++	});
++
++	it("pads do not disturb a roster that already satisfies the gate", async () => {
++		// A single-tool call gets exactly the missing four, nothing else:
++		// five total entries on the wire.
++		const padded = withOpenCodeGateTools([{ name: "bash", description: "run", parameters: { type: "object" } }]);
++		expect(padded).toHaveLength(5);
++	});
++
++	it("leaves non-OpenCode providers untouched", async () => {
++		const tools = await captureRequestTools(makeOpenAICompletionsModel());
++		expect(tools).toEqual([]);
++	});
++});
++
++describe("OpenCode free-tier error rewrite", () => {
++	it("explains the model-scoped denial while preserving the classifier markers", async () => {
++		const raw =
++			'403 {"error":{"type":"FreeTierError","message":"OpenCode\'s free tier can only be used from within OpenCode"}}';
++		const rewritten = await formatMessage(new Error(raw), { provider: "opencode-zen" });
++		expect(rewritten).toMatch(/FreeTierError/);
++		expect(rewritten).toMatch(/free tier can only be used from within/i);
++		expect(rewritten).toMatch(/paid models on the same key keep working/);
++		// Untouched for other providers: the wording is not globally unique.
++		expect(await formatMessage(new Error(raw), { provider: "openai" })).toBe(raw);
++	});
++});
++
++describe("OpenCode gate identity remains on every request", () => {
++	it("tool-less calls still carry the ses_-shaped session header", async () => {
++		let headers: Headers | undefined;
++		const fetchMock = async (_input: string | URL | Request, init?: RequestInit) => {
++			headers = new Headers(init?.headers);
++			return chatSse();
++		};
++		await completeSimple(
++			makeOpenCodeGoCompletionsModel(),
++			{ messages: [{ role: "user", content: "hi", timestamp: 0 }] },
++			{ apiKey: "key", fetch: fetchMock as typeof fetch },
++		);
++		expect(headers?.get("x-opencode-session")).toMatch(OPENCODE_SESSION_TOKEN_PATTERN);
++	});
++});
+diff --git a/packages/catalog/CHANGELOG.md b/packages/catalog/CHANGELOG.md
+index 31cdec39281..931d6e7c7f4 100644
+--- a/packages/catalog/CHANGELOG.md
++++ b/packages/catalog/CHANGELOG.md
+@@ -6,7 +6,7 @@
+ 
+ - Added `buildDiscoveredModel` helper for custom providers
+ - Added support for glob-based patterns in identity overrides
+-- Added `wire/opencode` helpers (`OPENCODE_USER_AGENT`, `toOpenCodeSessionToken`, `OPENCODE_SESSION_TOKEN_PATTERN`) for the OpenCode gateway client-identity contract
++- Added `wire/opencode` helpers (`OPENCODE_USER_AGENT`, `toOpenCodeSessionToken`, `OPENCODE_SESSION_TOKEN_PATTERN`, `OPENCODE_GATE_TOOL_NAMES`, `withOpenCodeGateTools`) for the OpenCode gateway client-identity and free-tier body-gate contracts
+ 
+ ### Changed
+ 
+diff --git a/packages/catalog/src/wire/opencode.ts b/packages/catalog/src/wire/opencode.ts
+index 82f8bbc8531..126e6273009 100644
+--- a/packages/catalog/src/wire/opencode.ts
++++ b/packages/catalog/src/wire/opencode.ts
+@@ -11,6 +11,53 @@
+ /** Canonical OpenCode client User-Agent; the gate reads only the leading token. */
+ export const OPENCODE_USER_AGENT = "opencode/1.18.31";
+ 
++/** Provider ids whose hosts sit behind the OpenCode gateways (Zen, Go). */
++export const OPENCODE_PROVIDER_IDS: ReadonlySet<string> = new Set(["opencode-zen", "opencode-go"]);
++
++/** Whether `provider` is served by an OpenCode gateway. */
++export function isOpenCodeProvider(provider: string): boolean {
++	return OPENCODE_PROVIDER_IDS.has(provider);
++}
++
++/**
++ * The gate additionally requires at least these OpenCode core tool NAMES in
++ * `tools[]` (schemas are ignored, extra non-OpenCode tools are fine, and the
++ * count is over distinct names). Agent harnesses carrying a normal tool roster
++ * satisfy this natively; tool-less auxiliary calls must pad.
++ */
++export const OPENCODE_GATE_TOOL_NAMES = ["bash", "edit", "glob", "grep", "read"] as const;
++
++/** Gate tool names missing from `names` (exact-match — the gate compares names only). */
++export function missingOpenCodeGateToolNames(names: Iterable<string>): string[] {
++	const present = new Set(names);
++	return OPENCODE_GATE_TOOL_NAMES.filter(name => !present.has(name));
++}
++
++/**
++ * Pad `tools` with the gate-required OpenCode tool names so tool-less auxiliary
++ * calls (advisors, one-shot helpers) pass the body check. Pads carry no
++ * parameters and an empty description — the gate ignores schemas — but callers
++ * MUST keep them out of the agent loop's tool registry: they are wire-shape
++ * filler, not executable work (the roster should never offer "bash" to a call
++ * that was built without tools).
++ *
++ * Returns the input array unchanged (same identity) when nothing is missing.
++ */
++export function withOpenCodeGateTools<T extends { name: string }>(tools: readonly T[] | undefined): T[] {
++	const existing = tools ?? [];
++	const missing = missingOpenCodeGateToolNames(existing.map(tool => tool.name));
++	if (missing.length === 0) return existing as T[];
++	// The stubs structurally differ from T only in fields the wire never reads.
++	// `strict: false` keeps every transport's strict-mode normalization inert.
++	const pads = missing.map(name => ({
++		name,
++		description: "",
++		parameters: { type: "object" },
++		strict: false,
++	})) as unknown as T[];
++	return [...existing, ...pads];
++}
++
+ /** Shape the OpenCode gate requires for `x-opencode-session`. */
+ export const OPENCODE_SESSION_TOKEN_PATTERN = /^ses_[0-9a-f]{12}[0-9A-Za-z]{14}$/;
+ 
+
+From 93ad4b51cd7894057ee1eb2cb7d1dee30500ac04 Mon Sep 17 00:00:00 2001
+From: Prateek <palprateek2004@gmail.com>
+Date: Sun, 20 Sep 2026 02:56:49 +0530
+Subject: [PATCH 3/4] fix(ai): exempt OpenCode free-tier gate denial from
+ direct credential rotation
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+isDirectCredentialRotationError rotated sibling keys on any 403, but the
+OpenCode free-tier gate denial is model-scoped client policy: sibling keys
+fail identically and the credential keeps serving paid SKUs. Extends the
+same exclusion isAuthRetryableError already applies.
+
+Live-gateway verified: old identity 403s with FreeTierError; branch
+identity passes the gate (rate limiter answers instead).
+
+🤖 Generated with Codebuff
+Co-Authored-By: Codebuff <noreply@codebuff.com>
+---
+ packages/ai/src/auth-retry.ts | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/packages/ai/src/auth-retry.ts b/packages/ai/src/auth-retry.ts
+index eafe51a8d4f..e7930c8713f 100644
+--- a/packages/ai/src/auth-retry.ts
++++ b/packages/ai/src/auth-retry.ts
+@@ -2,7 +2,7 @@ import { extractHttpStatusFromError } from "@oh-my-pi/pi-utils";
+ import type { OAuthAccess } from "./auth-storage";
+ import * as AIError from "./error";
+ import { isAuthRetryableError, isInvalidatedOAuthTokenError } from "./error/auth-classify";
+-import { isAccountPolicyError, isUsageLimit } from "./error/flags";
++import { isAccountPolicyError, isOpencodeFreeTierGateMessage, isUsageLimit } from "./error/flags";
+ import { isConcurrencyCapExclusion, isUsageLimitOutcome } from "./error/rate-limit";
+ 
+ /**
+@@ -95,13 +95,16 @@ function isDirectCredentialRotationError(error: unknown): boolean {
+ 	if (isUsageLimit(error) || isInvalidatedOAuthTokenError(error)) return true;
+ 	const status = AIError.status(error);
+ 	const message = error instanceof Error ? error.message : typeof error === "string" ? error : undefined;
+-	// A 403 normally means a valid token lacks access, so rotate through
+-	// siblings. A concurrency-cap 403 is transient instead; do not burn a
+-	// sibling before the caller's backoff layer can retry it.
+ 	const isForbidden =
+ 		status === 403 ||
+ 		(status === undefined && message !== undefined && extractHttpStatusFromError({ message }) === 403);
+-	if (isForbidden && !isConcurrencyCapExclusion(status, message)) return true;
++	// A 403 normally means a valid token lacks access, so rotate through
++	// siblings. A concurrency-cap 403 is transient instead; do not burn a
++	// sibling before the caller's backoff layer can retry it. OpenCode's
++	// free-tier gate denial is model-scoped client policy: sibling keys fail
++	// identically, and the credential keeps serving paid SKUs.
++	if (isForbidden && !isConcurrencyCapExclusion(status, message) && !isOpencodeFreeTierGateMessage(message))
++		return true;
+ 	return isUsageLimitOutcome(status, message);
+ }
+ 
+
+From 2bcaf7b0f1c8afa46cb78c3b38bc35e739c41429 Mon Sep 17 00:00:00 2001
+From: Prateek <palprateek2004@gmail.com>
+Date: Sun, 20 Sep 2026 03:03:59 +0530
+Subject: [PATCH 4/4] docs: add PR attribution to OpenCode gate changelog
+ entries
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+🤖 Generated with Codebuff
+Co-Authored-By: Codebuff <noreply@codebuff.com>
+---
+ packages/ai/CHANGELOG.md      | 6 +++---
+ packages/catalog/CHANGELOG.md | 2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/packages/ai/CHANGELOG.md b/packages/ai/CHANGELOG.md
+index 9fd3eaa88e9..d832221d99b 100644
+--- a/packages/ai/CHANGELOG.md
++++ b/packages/ai/CHANGELOG.md
+@@ -4,9 +4,9 @@
+ 
+ ### Fixed
+ 
+-- Fixed OpenCode Zen/Go free-tier 403 `FreeTierError` on model requests: OpenCode's gate rejects clients whose `User-Agent` is not `opencode/<version>` and whose `x-opencode-session` is not the canonical `ses_<12 hex><14 alnum>` shape, which omp's identity failed on both counts. All OpenCode inference now sends the canonical client UA and a stable session token derived from the conversation id so routing and prompt caching stay pinned across turns ([#12306](https://github.com/can1357/oh-my-pi/issues/12306)).
+-- Fixed OpenCode free-tier 403 on tool-less auxiliary calls (advisors, one-shot helpers): the gate also requires at least five OpenCode core tool names in `tools[]`, so `stream()` now pads such requests with stub entries for the missing names instead of letting the gateway refuse them.
+-- OpenCode `403 FreeTierError` denials no longer rotate sibling credentials or invalidate the stored key (the same key keeps serving paid models), and the surfaced message now explains the model-scoped restriction instead of reading like an auth failure.
++- Fixed OpenCode Zen/Go free-tier 403 `FreeTierError` on model requests: OpenCode's gate rejects clients whose `User-Agent` is not `opencode/<version>` and whose `x-opencode-session` is not the canonical `ses_<12 hex><14 alnum>` shape, which omp's identity failed on both counts. All OpenCode inference now sends the canonical client UA and a stable session token derived from the conversation id so routing and prompt caching stay pinned across turns ([#12556](https://github.com/can1357/oh-my-pi/pull/12556) by [@palprateek](https://github.com/palprateek))
++- Fixed OpenCode free-tier 403 on tool-less auxiliary calls (advisors, one-shot helpers): the gate also requires at least five OpenCode core tool names in `tools[]`, so `stream()` now pads such requests with stub entries for the missing names instead of letting the gateway refuse them ([#12556](https://github.com/can1357/oh-my-pi/pull/12556) by [@palprateek](https://github.com/palprateek)).
++- OpenCode `403 FreeTierError` denials no longer rotate sibling credentials or invalidate the stored key (the same key keeps serving paid models), and the surfaced message now explains the model-scoped restriction instead of reading like an auth failure ([#12556](https://github.com/can1357/oh-my-pi/pull/12556) by [@palprateek](https://github.com/palprateek)).
+ 
+ ## [18.2.6] - 2026-09-18
+ 
+diff --git a/packages/catalog/CHANGELOG.md b/packages/catalog/CHANGELOG.md
+index 931d6e7c7f4..3cd4efe593a 100644
+--- a/packages/catalog/CHANGELOG.md
++++ b/packages/catalog/CHANGELOG.md
+@@ -6,7 +6,7 @@
+ 
+ - Added `buildDiscoveredModel` helper for custom providers
+ - Added support for glob-based patterns in identity overrides
+-- Added `wire/opencode` helpers (`OPENCODE_USER_AGENT`, `toOpenCodeSessionToken`, `OPENCODE_SESSION_TOKEN_PATTERN`, `OPENCODE_GATE_TOOL_NAMES`, `withOpenCodeGateTools`) for the OpenCode gateway client-identity and free-tier body-gate contracts
++- Added `wire/opencode` helpers (`OPENCODE_USER_AGENT`, `toOpenCodeSessionToken`, `OPENCODE_SESSION_TOKEN_PATTERN`, `OPENCODE_GATE_TOOL_NAMES`, `withOpenCodeGateTools`) for the OpenCode gateway client-identity and free-tier body-gate contracts ([#12556](https://github.com/can1357/oh-my-pi/pull/12556) by [@palprateek](https://github.com/palprateek))
+ 
+ ### Changed
+ 

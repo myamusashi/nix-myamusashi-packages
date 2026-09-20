@@ -93,7 +93,7 @@
             inputs.nixpkgs.follows = "nixpkgs";
         };
         omp = {
-            url = "github:can1357/oh-my-pi?rev=be6cb8217cd4c1dafcc86793ae5d809ea4d7396a";
+            url = "github:can1357/oh-my-pi";
             inputs.nixpkgs.follows = "nixpkgs";
         };
     };
