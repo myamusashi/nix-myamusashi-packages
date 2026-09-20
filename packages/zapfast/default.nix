@@ -76,18 +76,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
           --replace-fail \
             '/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf' \
             '${noto-fonts}/share/fonts/noto/NotoSansArabic-Regular.ttf' \
-          --replace-fail \
-            '/System/Library/Fonts/Supplemental/Arial.ttf' \
-            '${liberation_ttf}/share/fonts/truetype/LiberationSans-Regular.ttf' \
-          --replace-fail \
-            '/Library/Fonts/Arial Unicode.ttf' \
-            '${dejavu_fonts}/share/fonts/truetype/dejavu/DejaVuSans.ttf' \
-          --replace-fail \
-            'C:\\Windows\\Fonts\\arial.ttf' \
-            '""' \
-          --replace-fail \
-            'C:\\Windows\\Fonts\\tahoma.ttf' \
-            '""'
     '';
 
     buildInputs = [
