@@ -22,18 +22,30 @@
 }:
 rustPlatform.buildRustPackage (finalAttrs: {
     pname = "zapfast";
-    version = "0.14.0";
+    version = "0.15.0-rc.1";
 
     src = fetchFromGitHub {
         owner = "crmne";
         repo = "zapfast";
         tag = "v${finalAttrs.version}";
-        hash = "sha256-8yGUUqedr5JnCIdLMhrT0o6hhBL0J1TNUBa/dUIoNB0=";
+        hash = "sha256-NXUihL6XqeHlzGXkCyhqhR+f06za1nI2p0UqW49bLRk=";
     };
 
     cargoLock = {
         lockFile = "${finalAttrs.src}/Cargo.lock";
-        allowBuiltinFetchGit = true;
+        outputHashes = {
+            "wacore-0.7.0" = "sha256-7CITUl3PKPZB9VgzcyuCyX2ejmXspOxWxeZla8QnCeQ=";
+            "wacore-appstate-0.7.0" = "sha256-7CITUl3PKPZB9VgzcyuCyX2ejmXspOxWxeZla8QnCeQ=";
+            "wacore-binary-0.7.0" = "sha256-7CITUl3PKPZB9VgzcyuCyX2ejmXspOxWxeZla8QnCeQ=";
+            "wacore-derive-0.7.0" = "sha256-7CITUl3PKPZB9VgzcyuCyX2ejmXspOxWxeZla8QnCeQ=";
+            "wacore-libsignal-0.7.0" = "sha256-7CITUl3PKPZB9VgzcyuCyX2ejmXspOxWxeZla8QnCeQ=";
+            "wacore-noise-0.7.0" = "sha256-7CITUl3PKPZB9VgzcyuCyX2ejmXspOxWxeZla8QnCeQ=";
+            "waproto-0.7.0" = "sha256-7CITUl3PKPZB9VgzcyuCyX2ejmXspOxWxeZla8QnCeQ=";
+            "whatsapp-rust-0.7.0" = "sha256-7CITUl3PKPZB9VgzcyuCyX2ejmXspOxWxeZla8QnCeQ=";
+            "whatsapp-rust-sqlite-storage-0.7.0" = "sha256-7CITUl3PKPZB9VgzcyuCyX2ejmXspOxWxeZla8QnCeQ=";
+            "whatsapp-rust-tokio-transport-0.7.0" = "sha256-7CITUl3PKPZB9VgzcyuCyX2ejmXspOxWxeZla8QnCeQ=";
+            "whatsapp-rust-ureq-http-client-0.7.0" = "sha256-7CITUl3PKPZB9VgzcyuCyX2ejmXspOxWxeZla8QnCeQ=";
+        };
     };
 
     cargoBuildFlags = [

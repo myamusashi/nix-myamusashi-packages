@@ -52,7 +52,18 @@ rustPlatform.buildRustPackage rec {
 
     cargoLock = {
         lockFile = "${src}/Cargo.lock";
-        allowBuiltinFetchGit = true;
+        outputHashes = {
+            "ecolor-0.36.2" = "sha256-FHaEaTrv1zGa6farUGM1TeIj2co9j+zJlUWd9aGbtIk=";
+            "eframe-0.36.2" = "sha256-FHaEaTrv1zGa6farUGM1TeIj2co9j+zJlUWd9aGbtIk=";
+            "egui-0.36.2" = "sha256-FHaEaTrv1zGa6farUGM1TeIj2co9j+zJlUWd9aGbtIk=";
+            "egui-wgpu-0.36.2" = "sha256-FHaEaTrv1zGa6farUGM1TeIj2co9j+zJlUWd9aGbtIk=";
+            "egui-winit-0.36.2" = "sha256-FHaEaTrv1zGa6farUGM1TeIj2co9j+zJlUWd9aGbtIk=";
+            "egui_glow-0.36.2" = "sha256-FHaEaTrv1zGa6farUGM1TeIj2co9j+zJlUWd9aGbtIk=";
+            "egui_system_fonts-0.36.2" = "sha256-FHaEaTrv1zGa6farUGM1TeIj2co9j+zJlUWd9aGbtIk=";
+            "emath-0.36.2" = "sha256-FHaEaTrv1zGa6farUGM1TeIj2co9j+zJlUWd9aGbtIk=";
+            "epaint-0.36.2" = "sha256-FHaEaTrv1zGa6farUGM1TeIj2co9j+zJlUWd9aGbtIk=";
+            "epaint_default_fonts-0.36.2" = "sha256-FHaEaTrv1zGa6farUGM1TeIj2co9j+zJlUWd9aGbtIk=";
+        };
     };
 
     cargoBuildFlags = [
