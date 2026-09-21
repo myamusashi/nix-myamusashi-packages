@@ -33,9 +33,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
     cargoLock = {
         lockFile = "${finalAttrs.src}/Cargo.lock";
-        outputHashes = {
-            "wacore-0.7.0" = "sha256-BivXjeyjeRkZqMVpNF/pF2JY1dfA4m7+a/gOa2QPlEE=";
-        };
+        allowBuiltinFetchGit = true;
     };
 
     cargoBuildFlags = [
