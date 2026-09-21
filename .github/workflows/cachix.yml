@@ -32,9 +32,9 @@ jobs:
         env:
           NIXPKGS_ALLOW_UNFREE: 1
         run: |
-          nix eval --impure --json .#packages.x86_64-linux --apply 'x: builtins.attrNames x' \
-            | jq -r '.[]' \
-            | xargs -I {} nix build --impure ".#{}" --no-link --print-out-paths --experimental-features "nix-command flakes ca-derivations"
+          nix run github:Mic92/nix-fast-build -- \
+           --flake ".#packages.x86_64-linux" \
+           --no-nom --skip-cached --max-jobs 2
 
       - name: Commit updates
         run: |
