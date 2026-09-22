@@ -96,6 +96,10 @@
             url = "github:can1357/oh-my-pi";
             inputs.nixpkgs.follows = "nixpkgs";
         };
+        zapfast = {
+            url = "github:crmne/zapfast";
+            inputs.nixpkgs.follows = "nixpkgs";
+        };
     };
 
     outputs = inputs @ {flake-parts, ...}:

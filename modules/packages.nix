@@ -7,6 +7,7 @@
         neovim-nightly-overlay
         wl-screenrec-fork
         omp
+        zapfast
         ;
 
     discoverPackages = {
@@ -16,6 +17,8 @@
             "9router"
             "headroom-ai"
             "hyprland-scroll-overview"
+            "hypr-dynamic-cursors"
+            "ladybird"
         ],
     }: let
         entries = builtins.readDir directory;
@@ -57,6 +60,7 @@ in {
                 ];
         });
         phplsp = pkgsWithPhplsp.php-lsp;
+        zapfastPkgs = zapfast.packages.${system}.default;
         wlScrnFork = wl-screenrec-fork.packages.${system}.default;
     in {
         formatter = pkgs.alejandra;
@@ -72,6 +76,7 @@ in {
                 wl-screenrec-fork = wlScrnFork;
                 php-lsp = phplsp;
                 omp = ompPkgs;
+                zapfast = zapfastPkgs;
             };
     };
 }
