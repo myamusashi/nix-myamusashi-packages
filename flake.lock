@@ -2319,7 +2319,8 @@
         "nixpkgs": "nixpkgs",
         "omp": "omp",
         "php-lsp": "php-lsp",
-        "wl-screenrec-fork": "wl-screenrec-fork"
+        "wl-screenrec-fork": "wl-screenrec-fork",
+        "zapfast": "zapfast"
       }
     },
     "rust-overlay": {
@@ -2335,6 +2336,27 @@
         "owner": "oxalica",
         "repo": "rust-overlay",
         "rev": "39db48099ad16834af7e27485a4babf9c28b3897",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "rust-overlay_2": {
+      "inputs": {
+        "nixpkgs": [
+          "zapfast",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1789977098,
+        "narHash": "sha256-fKY4BedarKx4aR0+UOHk65hhDW8pxFytFkaUi0VYDYk=",
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "rev": "2776e42828203ec89511699c8dcdedec69ab98e1",
         "type": "github"
       },
       "original": {
@@ -2794,6 +2816,27 @@
       "original": {
         "owner": "hyprwm",
         "repo": "xdg-desktop-portal-hyprland",
+        "type": "github"
+      }
+    },
+    "zapfast": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "rust-overlay": "rust-overlay_2"
+      },
+      "locked": {
+        "lastModified": 1790035081,
+        "narHash": "sha256-a3702NwwtNFPUxdyNPl3Gw9ShD7giizyE9Rf8XYc/+I=",
+        "owner": "crmne",
+        "repo": "zapfast",
+        "rev": "0d8cc506da2fe1b40f9d89aa31776ced02f6b1b4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "crmne",
+        "repo": "zapfast",
         "type": "github"
       }
     }
