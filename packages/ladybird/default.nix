@@ -2,31 +2,37 @@
     lib,
     stdenv,
     fetchFromGitHub,
-    fetchgit,
-    cacert,
-    unicode-emoji,
-    unicode-character-database,
-    unicode-idna,
-    publicsuffix-list,
+    fetchzip,
+    pdfjs,
     chromium-hsts-preload-list,
     cmake,
-    makeWrapper,
+    gitMinimal,
     ninja,
     pkg-config,
     curlFull, # Websocket support
     libavif,
     angle, # libEGL
-    libjxl,
+    brotli,
+    cpptrace,
+    glib,
+    glslang,
+    harfbuzz,
+    libdrm,
+    libGL,
+    libjpeg_turbo,
+    libpng,
+    libpsl,
+    libxml2,
     libedit,
     libpulseaudio,
     libwebp,
-    libxcrypt,
     mimalloc,
     openssl,
     perl,
     python3,
     qt6Packages,
     woff2,
+    wuffs,
     cargo,
     fast-float,
     ffmpeg,
@@ -44,108 +50,80 @@
     sdl3,
     icu78,
     simdjson,
-    fetchzip,
-    glslang,
+    sqlite,
     vulkan-headers,
     vulkan-loader,
     vulkan-memory-allocator,
+    zlib,
 }: let
-    # Ladybird's GIFLoader.cpp does `#include <wuffs/wuffs-v0.3.c>`, and its CMake
-    # requires the `wuffs/wuffs-v0.3.c` header specifically (pinned to wuffs 0.3.4
-    # via vcpkg.json). The nixpkgs `wuffs` package tracks 0.4.x, which installs an
-    # incompatible `wuffs-v0.4.c` header, so we vendor just the single-file 0.3.4
-    # header on the include path, mirroring Ladybird's own vcpkg overlay-port.
-    wuffsHeader = fetchzip {
-        url = "https://github.com/google/wuffs-mirror-release-c/archive/refs/tags/v0.3.4.tar.gz";
-        hash = "sha256-V7inWJqH7Q4Ac/ZB//7XHrpgfAYUPBxWBerBem6Q/Kk=";
-    };
-
-    # Ladybird's AK/kmalloc.cpp calls mimalloc's `mi_heap_get_default()`, which was
-    # removed/renamed (to `mi_theap_get_default()`) in mimalloc 3.x. Ladybird pins
-    # mimalloc 2.2.7 via vcpkg.json, so build against the matching 2.x series rather
-    # than the nixpkgs default (3.x). Remove once Ladybird supports mimalloc 3.x.
-    mimalloc2 = mimalloc.overrideAttrs {
-        version = "win-m4";
-        src = fetchFromGitHub {
-            owner = "microsoft";
-            repo = "mimalloc";
-            tag = "v2.2.7";
-            hash = "sha256-z9qMOTcGkURblZChXDGfQ58hrql52lG6EE1NQmxxuj0=";
-        };
-    };
+    # The integration patch shipped by Ladybird targets this PDF.js version.
+    pdfjsForLadybird = pdfjs.overrideAttrs (
+        final: _prev: {
+            version = "5.6.205";
+            src = fetchzip {
+                url = "https://github.com/mozilla/pdf.js/releases/download/v${final.version}/pdfjs-${final.version}-dist.zip";
+                hash = "sha256-JMmxoT68PNJ/MmlMwVNYcHerorklLv5YY6C55xjn73w=";
+                stripRoot = false;
+            };
+        }
+    );
 in
     stdenv.mkDerivation (finalAttrs: {
         pname = "ladybird";
-        version = "0-unstable-2026-08-12";
+        version = "0-unstable-2026-09-18";
 
         src = fetchFromGitHub {
             owner = "LadybirdBrowser";
             repo = "ladybird";
-            rev = "win-m4";
-            hash = "sha256-e4BuniyhsBIKUq2mBBVAyex8BzzTo99JAeuD9WCZuYM=";
+            rev = "07e8ff403b7bb622071e1f762d77decb55fc8838";
+            hash = "sha256-6d3DMDSCdGT13DrwdhKTLsaLHKlQL9V4jc0GAfGResM=";
         };
 
         cargoDeps = rustPlatform.fetchCargoVendor {
-            inherit (finalAttrs) src;
-            hash = "sha256-2asgV8IT3QKXvPezmP7VP+idLGDR/jfUa38/mErm7VI=";
+            inherit (finalAttrs) pname version src;
+            hash = "sha256-UshQ0YBl5TLbrEanqsNVeXgONYEux2bgBhI4ISby0Qc=";
         };
 
         patches = [
-            # The LibSandbox seccomp policy applied to RequestServer omits readv/writev,
-            # so curl/OpenSSL crash the process with SIGSYS on most HTTPS sites. Unfixed
-            # upstream; Ladybird no longer accepts external patches. See patch header.
-            ./allow-readv-writev-in-seccomp-sandbox.patch
+            # https://github.com/LadybirdBrowser/ladybird/issues/11772
+            ./build-information-source-archive.patch
         ];
 
         postPatch = ''
+            sed -i '/iconutil/d' UI/CMakeLists.txt
+
             perl -0pi -e \
               's/find_package\(ICU 78\.[0-9]+ EXACT REQUIRED COMPONENTS data i18n uc\)/find_package(ICU ${icu78.version} EXACT REQUIRED COMPONENTS data i18n uc)/ or die "ICU dependency not found\n"' \
               Meta/CMake/check_for_dependencies.cmake
+
+            # Install the same PDF viewer assets and integration patch as the vcpkg build.
+            cp -r ${pdfjsForLadybird}/share/pdf.js pdfjs
+            chmod -R u+w pdfjs
+            patch -d pdfjs -p1 < Meta/CMake/vcpkg/overlay-ports/pdfjs/0001-ladybird-embed.patch
+            substituteInPlace UI/cmake/ResourceFiles.cmake \
+              --replace-fail 'if (NOT "''${VCPKG_INSTALLED_DIR}" STREQUAL "" AND NOT "''${VCPKG_TARGET_TRIPLET}" STREQUAL "")' 'if (TRUE)' \
+              --replace-fail '"''${VCPKG_INSTALLED_DIR}/''${VCPKG_TARGET_TRIPLET}/share/pdfjs"' '"''${LADYBIRD_SOURCE_DIR}/pdfjs"'
 
             # Don't set absolute paths in RPATH
             substituteInPlace Meta/CMake/lagom_install_options.cmake \
               --replace-fail "\''${CMAKE_INSTALL_BINDIR}" "bin" \
               --replace-fail "\''${CMAKE_INSTALL_LIBDIR}" "lib"
-
-            # The vendored wuffs 0.3.4 header trips Ladybird's -Werror (suggest-override,
-            # calloc-transposed-args) when added as a normal include dir. vcpkg exposes it
-            # as a system include; mirror that by marking WUFFS_INCLUDE_DIR SYSTEM.
-            substituteInPlace Libraries/LibImageDecoders/CMakeLists.txt \
-              --replace-fail \
-                "target_include_directories(LibImageDecoders PRIVATE \''${WUFFS_INCLUDE_DIR})" \
-                "target_include_directories(LibImageDecoders SYSTEM PRIVATE \''${WUFFS_INCLUDE_DIR})"
         '';
 
         preConfigure = ''
-            # Setup caches for LibUnicode, LibTLS and LibGfx
-            # Note that the versions of the input data packages must match the
-            # expected version in the package's CMake.
-
+            # HSTS preload data is the only remaining downloaded data cache.
             mkdir -p build/Caches
-
-            cp -r ${unicode-character-database}/share/unicode build/Caches/UCD
-            chmod +w build/Caches/UCD
-            cp ${unicode-emoji}/share/unicode/emoji/emoji-test.txt build/Caches/UCD
-            cp ${unicode-idna}/share/unicode/idna/IdnaMappingTable.txt build/Caches/UCD
-            echo -n ${unicode-character-database.version} > build/Caches/UCD/version.txt
-            chmod -w build/Caches/UCD
-
-            mkdir build/Caches/PublicSuffix
-            cp ${publicsuffix-list}/share/publicsuffix/public_suffix_list.dat build/Caches/PublicSuffix
+            cmakeFlagsArray+=("-DLADYBIRD_CACHE_DIR=$PWD/build/Caches")
 
             mkdir build/Caches/HSTSPreload
             cp ${chromium-hsts-preload-list}/share/chromium-hsts-preload-list/transport_security_state_static.json build/Caches/HSTSPreload
-
-            # Provide the pinned wuffs 0.3.4 single-file header on the include path.
-            mkdir -p wuffs-include/wuffs
-            cp ${wuffsHeader}/release/c/wuffs-v0.3.c wuffs-include/wuffs/wuffs-v0.3.c
-            cmakeFlagsArray+=("-DWUFFS_INCLUDE_DIR=$PWD/wuffs-include")
         '';
 
         nativeBuildInputs =
             [
                 cargo
                 cmake
+                gitMinimal
                 ninja
                 perl
                 pkg-config
@@ -153,61 +131,78 @@ in
                 rustPlatform.cargoSetupHook
                 rustc
                 qt6Packages.wrapQtAppsHook
-                libtommath
             ]
-            ++ lib.optionals stdenv.hostPlatform.isLinux [
-                # glslangValidator is used to build the Vulkan DMABUF image shaders.
-                glslang
-            ];
+            ++ lib.optionals stdenv.hostPlatform.isLinux [glslang];
 
         buildInputs =
             [
                 curlFull
+                brotli
+                cpptrace
                 fast-float
                 ffmpeg
                 fmt
                 fontconfig
+                harfbuzz
                 libavif
                 angle # libEGL
-                libjxl
+                libGL
+                libjpeg_turbo
+                libpng
+                libpsl
+                libtommath
+                libxml2
                 libedit
                 libwebp
-                libxcrypt
-                mimalloc2
+                (mimalloc.overrideAttrs {
+                    # Ladybird uses heap APIs removed in mimalloc 3.
+                    version = "2.2.7";
+                    src = fetchFromGitHub {
+                        owner = "microsoft";
+                        repo = "mimalloc";
+                        tag = "v2.2.7";
+                        hash = "sha256-z9qMOTcGkURblZChXDGfQ58hrql52lG6EE1NQmxxuj0=";
+                    };
+                })
                 openssl
                 qt6Packages.qtbase
-                qt6Packages.qtmultimedia
                 qt6Packages.qtpositioning
                 sdl3
                 simdutf
                 (skia.overrideAttrs (prev: {
-                    version = "148-unstable-2026-06-23";
-
-                    src = fetchgit {
-                        url = "https://skia.googlesource.com/skia.git";
-                        # Tip of the chrome/m$version branch
-                        rev = "46f2e16555cac1211f4087cf24728fd741ac6495";
-                        hash = "sha256-vpd/W0C8zT+wzShdJYdd18GmNp/TklqF7bGZxfIaDDM=";
-                    };
-
+                    # Ladybird also uses Skia's color management API directly.
                     gnFlags =
                         prev.gnFlags
                         ++ [
-                            # https://github.com/LadybirdBrowser/ladybird/commit/af3d46dc06829dad65309306be5ea6fbc6a587ec
-                            # https://github.com/LadybirdBrowser/ladybird/commit/4d7b7178f9d50fff97101ea18277ebc9b60e2c7c
-                            # Remove when/if this gets upstreamed in skia.
-                            "extra_cflags+=[\"-DSKCMS_API=[[gnu::visibility(\\\"default\\\")]]\"]"
+                            "extra_cflags+=[\"-DSKCMS_DLL\"]"
                         ];
+                }))
+                (wuffs.overrideAttrs (prev: {
+                    # Ladybird includes the stable 0.3 single-file library.
+                    version = "0.3.4";
+                    vendorHash = "sha256-CRzsGHE3K/WWPX0A3B1CvvEdADlxdIhaT5fOtaA3LPo=";
+                    src = fetchFromGitHub {
+                        owner = "google";
+                        repo = "wuffs";
+                        tag = "v0.3.4";
+                        hash = "sha256-XiaHus+bZ4jAk2zwinzz7VzyThCNlx36Auqyw2OH5rM=";
+                    };
+                    postInstall = lib.replaceStrings
+                    ["release/c/wuffs-unsupported-snapshot.c" "wuffs-v0.4.c"]
+                    ["release/c/wuffs-v0.3.c" "wuffs-v0.3.c"]
+                    prev.postInstall;
                 }))
                 woff2
                 icu78
                 simdjson
+                sqlite
+                zlib
             ]
             ++ lib.optionals stdenv.hostPlatform.isLinux [
                 libpulseaudio.dev
+                glib
+                libdrm
                 qt6Packages.qtwayland
-                # Vulkan GPU painting; on Linux this also enables shareable DMABUF images,
-                # for which CMake now requires VulkanMemoryAllocator (and glslangValidator).
                 vulkan-headers
                 vulkan-loader
                 vulkan-memory-allocator
@@ -218,13 +213,10 @@ in
                 # Takes an enormous amount of resources, even with mold
                 (lib.cmakeBool "ENABLE_LTO_FOR_RELEASE" false)
                 # Disable network operations
-                "-DLADYBIRD_CACHE_DIR=Caches"
                 "-DENABLE_NETWORK_DOWNLOADS=OFF"
                 # Ladybird requires icu 78, but without this flag the default icu
                 # from other dependencies gets picked up instead.
                 (lib.cmakeFeature "ICU_ROOT" (toString icu78.dev))
-                # WUFFS_INCLUDE_DIR is set from preConfigure via cmakeFlagsArray so it can
-                # point at the absolute path of the vendored wuffs 0.3.4 header directory.
             ]
             ++ lib.optionals stdenv.hostPlatform.isLinux [
                 "-DCMAKE_INSTALL_LIBEXECDIR=libexec"
@@ -233,14 +225,7 @@ in
         # ld: [...]/OESVertexArrayObject.cpp.o: undefined reference to symbol 'glIsVertexArrayOES'
         # ld: [...]/libGL.so.1: error adding symbols: DSO missing from command line
         # https://github.com/LadybirdBrowser/ladybird/issues/371#issuecomment-2616415434
-        env.NIX_LDFLAGS = "-lGL -lfontconfig";
-
-        # Remove once upstream reads the trust store before sandboxing
-        # (https://github.com/LadybirdBrowser/ladybird/pull/10256).
-        postFixup = ''
-            wrapProgram "$out/bin/Ladybird" \
-              --add-flags "--certificate=${cacert}/etc/ssl/certs/ca-bundle.crt"
-        '';
+        env.NIX_LDFLAGS = lib.optionalString stdenv.hostPlatform.isLinux "-lGL " + "-lfontconfig";
 
         passthru.tests = {
             nixosTest = nixosTests.ladybird;
@@ -274,7 +259,10 @@ in
                 jk
                 schembriaiden
             ];
-            platforms = ["x86_64-linux"];
+            platforms = [
+                "x86_64-linux"
+                "aarch64-linux"
+            ];
             mainProgram = "Ladybird";
         };
     })
