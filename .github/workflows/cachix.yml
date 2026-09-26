@@ -31,7 +31,7 @@ jobs:
       - name: Build all packages
         env:
           NIXPKGS_ALLOW_UNFREE: 1
-          CARGO_BUILD_JOBS: 2
+          CARGO_BUILD_JOBS: 4
           CARGO_PROFILE_DEV_DEBUG: 0
           CARGO_PROFILE_RELEASE_DEBUG: 0
         run: |
