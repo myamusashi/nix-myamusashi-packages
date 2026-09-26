@@ -66,15 +66,28 @@ jobs:
           CARGO_PROFILE_DEV_DEBUG: 0
           CARGO_PROFILE_RELEASE_DEBUG: 0
         run: |
-          changed="${{ steps.update.outputs.packages }}"
-          if [ -n "$changed" ]; then
-            for pkg in $changed; do
-              echo "Building $pkg..."
-              nix build --impure ".#$pkg" --no-link --print-out-paths --experimental-features "nix-command flakes ca-derivations"
-            done
-          else
-            echo "No specific packages to build"
+          nix eval --impure --json .#packages.x86_64-linux --apply 'builtins.attrNames' \
+            | jq -r '.[]' > "$RUNNER_TEMP/flake-packages.txt"
+
+          targets=()
+          for pkg in ${{ steps.update.outputs.packages }}; do
+            if grep -Fxq "$pkg" "$RUNNER_TEMP/flake-packages.txt"; then
+              targets+=("$pkg")
+            else
+              echo "::warning title=Skipped::$pkg is not exported by the flake (see modules/packages.nix exclude) — updated but not built"
+            fi
+          done
+
+          if [ ${#targets[@]} -eq 0 ]; then
+            echo "No buildable package changed"
+            exit 0
           fi
+
+          echo "Building: ${targets[*]}"
+          nix run github:Mic92/nix-fast-build -- \
+            --flake ".#packages.x86_64-linux" \
+            --select "pkgs: builtins.listToAttrs (map (n: { name = n; value = builtins.getAttr n pkgs; }) (builtins.filter (n: builtins.elem n [ $(printf '"%s" ' "${targets[@]}") ]) (builtins.attrNames pkgs)))" \
+            --no-nom --skip-cached --max-jobs 2
 
       - name: Commit and push updates
         if: steps.update.outputs.changed == 'true'
