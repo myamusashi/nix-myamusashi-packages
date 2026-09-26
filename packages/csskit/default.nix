@@ -5,7 +5,7 @@
     openssl,
     fetchFromGitHub,
 }:
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage {
     pname = "csskit";
     version = "unstable-a2ac1658";
 
