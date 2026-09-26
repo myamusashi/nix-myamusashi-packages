@@ -2827,11 +2827,11 @@
         "rust-overlay": "rust-overlay_2"
       },
       "locked": {
-        "lastModified": 1790283244,
-        "narHash": "sha256-SRZgkOt+7PP9VmqruMV9fXeshccVGXgyzGJC8ZMNYe0=",
+        "lastModified": 1790423195,
+        "narHash": "sha256-QUdz0MjE9HMyg+5Wf6mIim5dhfBGYpJnbQ2iEt12Nzw=",
         "owner": "crmne",
         "repo": "zapfast",
-        "rev": "a4d4622afa72940ab4390a2351f158d2658812f3",
+        "rev": "9b086f833b594a7a66174f7c718b9c38a8b495ac",
         "type": "github"
       },
       "original": {
