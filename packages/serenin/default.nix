@@ -39,19 +39,19 @@
     bubblewrap,
     xdg-dbus-proxy,
 }:
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage (finalAttrs: {
     pname = "serein";
-    version = "1.0.0-nightly.20260923.45";
+    version = "1.0.0-nightly.20260927.48";
 
     src = fetchFromGitHub {
         owner = "ViceVerse-cz";
         repo = "Serein";
-        tag = "v${version}";
-        hash = "sha256-U8vExbT4p3gVTKlBDHXo2DUbS4RmYzj9Lx6DgpBQOiQ=";
+        tag = "v${finalAttrs.version}";
+        hash = "sha256-5KLAFC3fiZdux+GmC05cO4uNmPfHuoWBxgfWBbMn42E=";
     };
 
     cargoLock = {
-        lockFile = "${src}/Cargo.lock";
+        lockFile = "${finalAttrs.src}/Cargo.lock";
         outputHashes = {
             "ecolor-0.36.2" = "sha256-zwh3bSl1NYGqFdU62yYAAYHa3d2iTTfq70xjHz2yWY4=";
             "eframe-0.36.2" = "sha256-zwh3bSl1NYGqFdU62yYAAYHa3d2iTTfq70xjHz2yWY4=";
@@ -137,30 +137,30 @@ rustPlatform.buildRustPackage rec {
     preFixup = lib.optionalString stdenv.hostPlatform.isLinux ''
         gappsWrapperArgs+=(
           --prefix PATH : "${
-            lib.makeBinPath [
-                bubblewrap
-                xdg-dbus-proxy
-            ]
-        }"
+        lib.makeBinPath [
+            bubblewrap
+            xdg-dbus-proxy
+        ]
+    }"
           --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "${
-            lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" [
-                gst_all_1.gst-plugins-bad
-                gst_all_1.gst-plugins-base
-                gst_all_1.gst-plugins-good
-                gst_all_1.gst-libav
-            ]
-        }"
+        lib.makeSearchPathOutput "lib" "lib/gstreamer-1.0" [
+            gst_all_1.gst-plugins-bad
+            gst_all_1.gst-plugins-base
+            gst_all_1.gst-plugins-good
+            gst_all_1.gst-libav
+        ]
+    }"
         )
     '';
 
     postInstall =
         lib.optionalString stdenv.hostPlatform.isLinux ''
-            install -Dm444 ${src}/packaging/linux/serein.desktop \
+            install -Dm444 ${finalAttrs.src}/packaging/linux/serein.desktop \
               $out/share/applications/org.serein.desktop.desktop
             substituteInPlace $out/share/applications/org.serein.desktop.desktop \
               --replace-fail "Exec=serein" "Exec=$out/bin/serein"
 
-            for theme_dir in ${src}/packaging/linux/hicolor/*; do
+            for theme_dir in ${finalAttrs.src}/packaging/linux/hicolor/*; do
               size=$(basename "$theme_dir")
               for icon in "$theme_dir"/apps/*; do
                 if [ -f "$icon" ]; then
@@ -171,8 +171,8 @@ rustPlatform.buildRustPackage rec {
         ''
         + lib.optionalString stdenv.hostPlatform.isDarwin ''
             mkdir -p "$out/Applications/Serein.app/Contents/MacOS" "$out/Applications/Serein.app/Contents/Resources"
-            install -Dm444 ${src}/packaging/macos/Info.plist "$out/Applications/Serein.app/Contents/Info.plist"
-            install -Dm444 ${src}/packaging/macos/Serein.icns "$out/Applications/Serein.app/Contents/Resources/Serein.icns"
+            install -Dm444 ${finalAttrs.src}/packaging/macos/Info.plist "$out/Applications/Serein.app/Contents/Info.plist"
+            install -Dm444 ${finalAttrs.src}/packaging/macos/Serein.icns "$out/Applications/Serein.app/Contents/Resources/Serein.icns"
             ln -s "$out/bin/serein" "$out/Applications/Serein.app/Contents/MacOS/serein"
         '';
 
@@ -186,4 +186,4 @@ rustPlatform.buildRustPackage rec {
         platforms = platforms.linux ++ platforms.darwin;
         mainProgram = "serein";
     };
-}
+} )
