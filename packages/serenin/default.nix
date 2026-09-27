@@ -53,16 +53,16 @@ rustPlatform.buildRustPackage (finalAttrs: {
     cargoLock = {
         lockFile = "${finalAttrs.src}/Cargo.lock";
         outputHashes = {
-            "ecolor-0.36.2" = "sha256-zwh3bSl1NYGqFdU62yYAAYHa3d2iTTfq70xjHz2yWY4=";
-            "eframe-0.36.2" = "sha256-zwh3bSl1NYGqFdU62yYAAYHa3d2iTTfq70xjHz2yWY4=";
-            "egui-0.36.2" = "sha256-zwh3bSl1NYGqFdU62yYAAYHa3d2iTTfq70xjHz2yWY4=";
-            "egui-wgpu-0.36.2" = "sha256-zwh3bSl1NYGqFdU62yYAAYHa3d2iTTfq70xjHz2yWY4=";
-            "egui-winit-0.36.2" = "sha256-zwh3bSl1NYGqFdU62yYAAYHa3d2iTTfq70xjHz2yWY4=";
-            "egui_glow-0.36.2" = "sha256-zwh3bSl1NYGqFdU62yYAAYHa3d2iTTfq70xjHz2yWY4=";
-            "egui_system_fonts-0.36.2" = "sha256-zwh3bSl1NYGqFdU62yYAAYHa3d2iTTfq70xjHz2yWY4=";
-            "emath-0.36.2" = "sha256-zwh3bSl1NYGqFdU62yYAAYHa3d2iTTfq70xjHz2yWY4=";
-            "epaint-0.36.2" = "sha256-zwh3bSl1NYGqFdU62yYAAYHa3d2iTTfq70xjHz2yWY4=";
-            "epaint_default_fonts-0.36.2" = "sha256-zwh3bSl1NYGqFdU62yYAAYHa3d2iTTfq70xjHz2yWY4=";
+            "ecolor-0.36.2" = "sha256-pexXIiZKSu0RvPSr0Xa16d4F0zrGifqXTNTrCk0FnoE=";
+            "eframe-0.36.2" = "sha256-pexXIiZKSu0RvPSr0Xa16d4F0zrGifqXTNTrCk0FnoE=";
+            "egui-0.36.2" = "sha256-pexXIiZKSu0RvPSr0Xa16d4F0zrGifqXTNTrCk0FnoE=";
+            "egui-wgpu-0.36.2" = "sha256-pexXIiZKSu0RvPSr0Xa16d4F0zrGifqXTNTrCk0FnoE=";
+            "egui-winit-0.36.2" = "sha256-pexXIiZKSu0RvPSr0Xa16d4F0zrGifqXTNTrCk0FnoE=";
+            "egui_glow-0.36.2" = "sha256-pexXIiZKSu0RvPSr0Xa16d4F0zrGifqXTNTrCk0FnoE=";
+            "egui_system_fonts-0.36.2" = "sha256-pexXIiZKSu0RvPSr0Xa16d4F0zrGifqXTNTrCk0FnoE=";
+            "emath-0.36.2" = "sha256-pexXIiZKSu0RvPSr0Xa16d4F0zrGifqXTNTrCk0FnoE=";
+            "epaint-0.36.2" = "sha256-pexXIiZKSu0RvPSr0Xa16d4F0zrGifqXTNTrCk0FnoE=";
+            "epaint_default_fonts-0.36.2" = "sha256-pexXIiZKSu0RvPSr0Xa16d4F0zrGifqXTNTrCk0FnoE=";
         };
     };
 
