@@ -8,6 +8,7 @@
         wl-screenrec-fork
         omp
         zapfast
+        quickshell
         ;
 
     discoverPackages = {
@@ -56,6 +57,7 @@ in {
         phplsp = pkgsWithPhplsp.php-lsp;
         zapfastPkgs = zapfast.packages.${system}.default;
         wlScrnFork = wl-screenrec-fork.packages.${system}.default;
+        qsPackages = quickshell.packages.${system}.default;
     in {
         formatter = pkgs.alejandra;
 
@@ -71,6 +73,7 @@ in {
                 php-lsp = phplsp;
                 omp = ompPkgs;
                 zapfast = zapfastPkgs;
+                quickshell = qsPackages;
             };
     };
 }
