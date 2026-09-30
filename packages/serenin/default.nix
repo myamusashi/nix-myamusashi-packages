@@ -41,13 +41,13 @@
 }:
 rustPlatform.buildRustPackage (finalAttrs: {
     pname = "serein";
-    version = "1.0.0-nightly.20260927.48";
+    version = "1.0.0-nightly.20260928.49";
 
     src = fetchFromGitHub {
         owner = "ViceVerse-cz";
         repo = "Serein";
         tag = "v${finalAttrs.version}";
-        hash = "sha256-5KLAFC3fiZdux+GmC05cO4uNmPfHuoWBxgfWBbMn42E=";
+        hash = "sha256-JeLbhqG7JnLsHONyh1W3GKOQObLBinhb66vfabfsvhc=";
     };
 
     cargoLock = {
