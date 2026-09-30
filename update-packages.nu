@@ -15,14 +15,16 @@
 #   **Tagged mode** — version does NOT start with `unstable-` (e.g. `"0.5.40"`):
 #      1. Fetch the latest release tag from GitHub / Gitea.
 #      2. Strip a leading `v` for the version field.
-#      3. If rev/tag uses interpolation (`"${version}"` / `"v${version}"`), leave it
-#         alone — only version changes.  Otherwise write the raw tag name.
-#      4. Prefetch the source hash from the tag archive.
+#      3. If rev/tag uses interpolation (`"${version}"`, `"v${finalAttrs.version}"`,
+#         …), leave it alone — only version changes.  Otherwise write the raw tag.
+#      4. Prefetch the source hash from the tag archive — or, when the fetcher
+#         sets `fetchSubmodules = true`, from the git checkout with submodules.
 #   **Unstable mode** — version starts with `unstable-` (e.g. `"unstable-df91c757"`):
 #      1. Fetch the latest commit on the default branch.
 #      2. Set version to `unstable-<7-char-sha>`.
 #      3. Set rev (or tag for Gitea) to the full commit sha.
-#      4. Prefetch the source hash from the commit archive.
+#      4. Prefetch the source hash from the commit archive (git checkout when
+#         `fetchSubmodules = true`).
 #
 #   `cargoHash` (and `npmDepsHash`) are auto-resolved by building and parsing
 #   the mismatch error.
@@ -157,9 +159,15 @@ def parse-git-source [source: string] {
 }
 
 # Prefetch a git dep and return its SRI sha256 (e.g. "sha256-...."), or null on failure.
-def prefetch-git-hash [url: string, rev: string] {
+# `submodules = true` mirrors `fetchFromGitHub { fetchSubmodules = true; }`, which
+# hashes the git checkout with its submodules rather than a source tarball.
+def prefetch-git-hash [url: string, rev: string, submodules: bool = false] {
     try {
-        let result = (nix run "nixpkgs#nix-prefetch-git" -- --url $url --rev $rev --quiet | complete)
+        mut args = ["--url" $url "--rev" $rev "--quiet"]
+        if $submodules {
+            $args = ($args | append "--fetch-submodules")
+        }
+        let result = (nix run "nixpkgs#nix-prefetch-git" -- ...$args | complete)
         if $result.exit_code != 0 {
             return null
         }
@@ -169,6 +177,24 @@ def prefetch-git-hash [url: string, rev: string] {
         if ($sri | is-empty) { null } else { $sri }
     } catch {
         null
+    }
+}
+
+# Hash the package source the same way its fetcher will.
+#
+# `fetchFromGitHub` / `fetchFromGitea` do NOT hash the auto-generated
+# `/archive/<ref>.tar.gz`: they clone with git, strip `.git`, and normalize. For a
+# plain checkout that happens to coincide with `prefetch-file --unpack` on the
+# tarball, but with `fetchSubmodules = true` the tree additionally contains every
+# submodule checkout, so the tarball hash can never match and the build always
+# dies with "hash mismatch in fixed-output derivation". Such packages must be
+# hashed via nix-prefetch-git --fetch-submodules.
+def prefetch-src-hash [content: string, git_url: string, archive_url: string, ref: string] {
+    if ($content | str contains "fetchSubmodules = true") {
+        print "  fetchSubmodules = true — hashing the git checkout with submodules"
+        prefetch-git-hash $git_url $ref true
+    } else {
+        prefetch-hash $archive_url
     }
 }
 
@@ -401,6 +427,7 @@ def update-package [file: string] {
     mut archive_ref = ""       # ref/tag used in the archive URL (full sha or tag name)
     mut rev_key = ""
     mut archive_base = ""
+    mut git_base = ""
     mut should_update_rev = true
     mut file_rev = ""          # value to write into rev/tag (full sha or tag name)
     mut domain = ""
@@ -408,6 +435,7 @@ def update-package [file: string] {
     if $is_github {
         $rev_key = "rev"
         $archive_base = $"https://github.com/($owner)/($repo)/archive"
+        $git_base = $"https://github.com/($owner)/($repo)"
     } else {
         $rev_key = "tag"
         $domain = (extract-field $content "domain")
@@ -416,6 +444,7 @@ def update-package [file: string] {
             return
         }
         $archive_base = $"https://($domain)/($owner)/($repo)/archive"
+        $git_base = $"https://($domain)/($owner)/($repo)"
     }
 
     if $is_tagged {
@@ -429,7 +458,9 @@ def update-package [file: string] {
         $new_version = ($tag | str replace -r '^v' '')
         $archive_ref = $tag
         let current_rev = (extract-field $content $rev_key)
-        if ($current_rev != null) and ($current_rev | str contains '${version}') {
+        # any interpolation (`${version}`, `v${finalAttrs.version}`, …) means the
+        # ref is derived from the version field, so only `version` needs writing
+        if ($current_rev != null) and ($current_rev | str contains '${') {
             $should_update_rev = false
         } else {
             $file_rev = $tag
@@ -450,7 +481,11 @@ def update-package [file: string] {
 
     let archive_url = $"($archive_base)/($archive_ref).tar.gz"
     print $"  hashing ($archive_url) ..."
-    let new_hash = (prefetch-hash $archive_url)
+    let new_hash = (prefetch-src-hash $content $git_base $archive_url $archive_ref)
+    if $new_hash == null {
+        print $"  ! could not prefetch source hash — leaving ($file) untouched"
+        return
+    }
     print $"  hash: ($new_hash)"
 
     mut new_content = $content
