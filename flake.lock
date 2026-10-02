@@ -2848,11 +2848,11 @@
         "rust-overlay": "rust-overlay_2"
       },
       "locked": {
-        "lastModified": 1790454752,
-        "narHash": "sha256-SSoZnOkf2yY+VnrN6AzaRIpvdyomACf5fyyLW9lzExg=",
+        "lastModified": 1790926864,
+        "narHash": "sha256-WHVjGy+v6Olu3W/V7VAF3Ab0/LU5vZEuVXF9jA/Jrng=",
         "owner": "crmne",
         "repo": "zapfast",
-        "rev": "f0a77066819d6605d04b20653a166fccc0c72b63",
+        "rev": "5a482c288998eb3dc22776476efa93d7198784f7",
         "type": "github"
       },
       "original": {
