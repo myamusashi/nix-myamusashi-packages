@@ -338,6 +338,27 @@
         "type": "github"
       }
     },
+    "flake-parts_6": {
+      "inputs": {
+        "nixpkgs-lib": [
+          "serein",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1788450739,
+        "narHash": "sha256-glZLQlzIn1fXH6PazR2iUmTo7kzzyYSshrWhLS9TqCU=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "31729ca8cbdb4fa927b34e5f4353e6a83f39e993",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
     "flake-utils": {
       "inputs": {
         "systems": "systems_21"
@@ -636,11 +657,11 @@
         "xdph": "xdph"
       },
       "locked": {
-        "lastModified": 1790934926,
-        "narHash": "sha256-hCcfIpmslQa8Jj0TxjtNBrd6YLTkgjgDpDIFgTkfbHE=",
+        "lastModified": 1790982315,
+        "narHash": "sha256-wYOit5AW+UzBd3N/F882MOxkJyaRTXBsIjrCrWj0C2M=",
         "owner": "hyprwm",
         "repo": "Hyprland",
-        "rev": "a9aad0cff4a83cab163728c0ed54b440ab210cc3",
+        "rev": "ae50c4d6bbbcb8ee7a0b0d89341a8e93fc9b99e7",
         "type": "github"
       },
       "original": {
@@ -2237,11 +2258,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1790546684,
-        "narHash": "sha256-zJKp/AkeEAsRxWiNfzKVO8Ic+TSg4zdjOR+6b1zAJlE=",
+        "lastModified": 1790989635,
+        "narHash": "sha256-6qFSOntEUea67kQSprBxGjEDbp3zY1jlzpEqBH3ryNs=",
         "owner": "can1357",
         "repo": "oh-my-pi",
-        "rev": "6d1789889fd923b652d024149950367fa9354c18",
+        "rev": "9348320cc4a30a7195d36a1f05a6c11bcb701a17",
         "type": "github"
       },
       "original": {
@@ -2340,6 +2361,7 @@
         "omp": "omp",
         "php-lsp": "php-lsp",
         "quickshell": "quickshell",
+        "serein": "serein",
         "wl-screenrec-fork": "wl-screenrec-fork",
         "zapfast": "zapfast"
       }
@@ -2383,6 +2405,27 @@
       "original": {
         "owner": "oxalica",
         "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "serein": {
+      "inputs": {
+        "flake-parts": "flake-parts_6",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790981750,
+        "narHash": "sha256-JlEAb7XpW47Vase0vLOXoC7cm3LOmBgULfbOugQujcA=",
+        "owner": "ViceVerse-cz",
+        "repo": "Serein",
+        "rev": "074ba3a158b72ddb9b7bc327fba64ca4b93975e2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ViceVerse-cz",
+        "repo": "Serein",
         "type": "github"
       }
     },
@@ -2848,11 +2891,11 @@
         "rust-overlay": "rust-overlay_2"
       },
       "locked": {
-        "lastModified": 1790926864,
-        "narHash": "sha256-WHVjGy+v6Olu3W/V7VAF3Ab0/LU5vZEuVXF9jA/Jrng=",
+        "lastModified": 1790988311,
+        "narHash": "sha256-hkH+Coh6fu7vUJN9nYaLctL2UPsb243IFv3lob7HkGA=",
         "owner": "crmne",
         "repo": "zapfast",
-        "rev": "5a482c288998eb3dc22776476efa93d7198784f7",
+        "rev": "a0842d9484ee8c52043f6a9ce61c51701640c8a1",
         "type": "github"
       },
       "original": {

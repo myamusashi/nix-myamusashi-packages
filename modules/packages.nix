@@ -9,6 +9,7 @@
         omp
         zapfast
         quickshell
+        serein
         ;
 
     discoverPackages = {
@@ -56,6 +57,7 @@ in {
         ompPkgs = omp.packages.${system}.default;
         phplsp = pkgsWithPhplsp.php-lsp;
         zapfastPkgs = zapfast.packages.${system}.default;
+        sereinPkgs = serein.packages.${system}.default;
         wlScrnFork = wl-screenrec-fork.packages.${system}.default;
         qsPackages = quickshell.packages.${system}.default;
     in {
@@ -73,6 +75,7 @@ in {
                 php-lsp = phplsp;
                 omp = ompPkgs;
                 zapfast = zapfastPkgs;
+                serein = sereinPkgs;
                 quickshell = qsPackages;
             };
     };

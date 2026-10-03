@@ -100,6 +100,10 @@
             url = "github:crmne/zapfast";
             inputs.nixpkgs.follows = "nixpkgs";
         };
+        serein = {
+            url = "github:ViceVerse-cz/Serein";
+            inputs.nixpkgs.follows = "nixpkgs";
+        };
         quickshell = {
             url = "github:quickshell-mirror/quickshell";
             inputs.nixpkgs.follows = "nixpkgs";
