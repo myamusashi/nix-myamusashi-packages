@@ -108,6 +108,10 @@
             url = "github:quickshell-mirror/quickshell";
             inputs.nixpkgs.follows = "nixpkgs";
         };
+        home-manager = {
+            url = "github:nix-community/home-manager";
+            inputs.nixpkgs.follows = "nixpkgs";
+        };
     };
 
     outputs = inputs @ {flake-parts, ...}:
@@ -119,6 +123,7 @@
             imports = [
                 ./modules/packages.nix
                 ./modules/devshell.nix
+                ./modules/home-manager.nix
             ];
         };
 }
