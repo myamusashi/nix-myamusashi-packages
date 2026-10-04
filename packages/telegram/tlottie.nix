@@ -5,17 +5,14 @@
 }:
 rustPlatform.buildRustPackage (finalAttrs: {
     pname = "tlottie";
-    # Pinned to the rev tdesktop builds against, see in tdesktop:
-    # - Telegram/build/docker/centos_env/Dockerfile (tlottie stage)
-    # - Telegram/build/prepare/prepare.py (stage 'tlottie')
-    # - snap/snapcraft.yaml (tlottie part)
-    version = "0-unstable-2026-09-08";
+    version = "0-unstable-2026-08-03";
 
     src = fetchFromGitHub {
         owner = "dkaraush";
         repo = "tlottie";
-        rev = "4b940c7942fbde8ee56f10f39a5224a4153bd91e";
-        hash = "sha256-Nddb4lGC3XvltwBbPHMUdM7F87en/H0T5allfjxWHO8=";
+        rev = "19d51d3c19632a63fdbe17c62f10332d978cb940";
+        hash = "sha256-Cb1XWnryZEKTyvhBeOsYX5KZG88zUOAlSRhfyIh06g4=";
+        fetchSubmodules = true;
     };
 
     cargoLock = {

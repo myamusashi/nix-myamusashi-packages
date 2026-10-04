@@ -9,7 +9,7 @@
     libjpeg,
     openssl,
     libopus,
-    ffmpeg_6,
+    ffmpeg,
     openh264,
     crc32c,
     libvpx,
@@ -31,13 +31,13 @@
 }:
 stdenv.mkDerivation {
     pname = "tg_owt";
-    version = "0-unstable-2026-04-09";
+    version = "0-unstable-2026-08-03";
 
     src = fetchFromGitHub {
         owner = "desktop-app";
         repo = "tg_owt";
-        rev = "89df288dd6ba5b2ec95b3c5eaf1e7e0c3a870fc4";
-        hash = "sha256-wdO3AACCEN3IDYWt5a+f7zrcPFoqz+c7vLpo6LZk29w=";
+        rev = "19d51d3c19632a63fdbe17c62f10332d978cb940";
+        hash = "sha256-Cb1XWnryZEKTyvhBeOsYX5KZG88zUOAlSRhfyIh06g4=";
         fetchSubmodules = true;
     };
 
@@ -68,7 +68,7 @@ stdenv.mkDerivation {
         libjpeg
         openssl
         libopus
-        ffmpeg_6
+        ffmpeg
         openh264
         crc32c
         libvpx
@@ -95,6 +95,6 @@ stdenv.mkDerivation {
         homepage = "https://github.com/desktop-app/tg_owt";
         license = lib.licenses.bsd3;
         maintainers = with lib.maintainers; [oxalica];
-        platforms = ["x86_64-linux"];
+        platforms = lib.platforms.linux ++ lib.platforms.darwin;
     };
 }
