@@ -10,6 +10,7 @@
         zapfast
         quickshell
         serein
+        mangaDesk
         ;
 
     discoverPackages = {
@@ -60,6 +61,7 @@ in {
         sereinPkgs = serein.packages.${system}.default;
         wlScrnFork = wl-screenrec-fork.packages.${system}.default;
         qsPackages = quickshell.packages.${system}.default;
+        mangaDeskPkgs = mangaDesk.packages.${system}.default;
     in {
         formatter = pkgs.alejandra;
 
@@ -77,6 +79,7 @@ in {
                 zapfast = zapfastPkgs;
                 serein = sereinPkgs;
                 quickshell = qsPackages;
+                mangaDesk = mangaDeskPkgs;
             };
     };
 }

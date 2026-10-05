@@ -20,6 +20,10 @@
             url = "github:nix-community/neovim-nightly-overlay";
             inputs.nixpkgs.follows = "nixpkgs";
         };
+        mangaDesk = {
+            url = "git+https://git.myamusashi.cc/myamusashi/mangaDesk";
+            inputs.nixpkgs.follows = "nixpkgs";
+        };
         aquamarine = {
             url = "github:hyprwm/aquamarine";
             inputs.nixpkgs.follows = "nixpkgs";

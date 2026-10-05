@@ -2174,6 +2174,26 @@
         "type": "github"
       }
     },
+    "mangaDesk": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791169312,
+        "narHash": "sha256-SmSL5xFJsQtQ8w/fhcpRF7xT73V40szUA9mmJxW36uA=",
+        "ref": "refs/heads/master",
+        "rev": "b8994fd6ff12074c8bc8d6a1064e203254789cd8",
+        "revCount": 10,
+        "type": "git",
+        "url": "https://git.myamusashi.cc/myamusashi/mangaDesk"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://git.myamusashi.cc/myamusashi/mangaDesk"
+      }
+    },
     "neovim-nightly-overlay": {
       "inputs": {
         "flake-parts": "flake-parts_3",
@@ -2406,6 +2426,7 @@
         "hyprwayland-scanner": "hyprwayland-scanner_11",
         "hyprwire": "hyprwire_2",
         "kwin-effects-forceblur": "kwin-effects-forceblur",
+        "mangaDesk": "mangaDesk",
         "neovim-nightly-overlay": "neovim-nightly-overlay",
         "nixpkgs": "nixpkgs",
         "omp": "omp",
