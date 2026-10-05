@@ -31,13 +31,13 @@
 }:
 stdenv.mkDerivation {
     pname = "tg_owt";
-    version = "0-unstable-2026-08-03";
+    version = "0-unstable-2026-09-29";
 
     src = fetchFromGitHub {
         owner = "desktop-app";
         repo = "tg_owt";
-        rev = "19d51d3c19632a63fdbe17c62f10332d978cb940";
-        hash = "sha256-Cb1XWnryZEKTyvhBeOsYX5KZG88zUOAlSRhfyIh06g4=";
+        rev = "e2d0e88d1bde6cc600da5dc92581dc97e4c1e685";
+        hash = "sha256-dQRpV0HtVpceXreBXIbg3mOuj7zCZS1rD+hVaVf+yd8=";
         fetchSubmodules = true;
     };
 
@@ -95,6 +95,6 @@ stdenv.mkDerivation {
         homepage = "https://github.com/desktop-app/tg_owt";
         license = lib.licenses.bsd3;
         maintainers = with lib.maintainers; [oxalica];
-        platforms = lib.platforms.linux ++ lib.platforms.darwin;
+        platforms = lib.platforms.linux;
     };
 }

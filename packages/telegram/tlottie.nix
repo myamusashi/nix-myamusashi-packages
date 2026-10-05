@@ -5,13 +5,13 @@
 }:
 rustPlatform.buildRustPackage (finalAttrs: {
     pname = "tlottie";
-    version = "0-unstable-2026-08-03";
+    version = "1.0.6";
 
     src = fetchFromGitHub {
         owner = "dkaraush";
         repo = "tlottie";
-        rev = "19d51d3c19632a63fdbe17c62f10332d978cb940";
-        hash = "sha256-Cb1XWnryZEKTyvhBeOsYX5KZG88zUOAlSRhfyIh06g4=";
+        tag = "v${finalAttrs.version}";
+        hash = "sha256-WtYyyf7AL+jtYY368X26PTnKSBUSZ9+IZjod/T5Oceg=";
         fetchSubmodules = true;
     };
 
