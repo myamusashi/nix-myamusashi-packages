@@ -11,6 +11,7 @@
         quickshell
         serein
         mangaDesk
+        qmlformat-rs
         ;
 
     discoverPackages = {
@@ -62,6 +63,7 @@ in {
         wlScrnFork = wl-screenrec-fork.packages.${system}.default;
         qsPackages = quickshell.packages.${system}.default;
         mangaDeskPkgs = mangaDesk.packages.${system}.default;
+        qmlformatRsPkgs = qmlformat-rs.packages.${system}.default;
     in {
         formatter = pkgs.alejandra;
 
@@ -80,6 +82,7 @@ in {
                 serein = sereinPkgs;
                 quickshell = qsPackages;
                 mangaDesk = mangaDeskPkgs;
+                qmlformat-rs = qmlformatRsPkgs;
             };
     };
 }
