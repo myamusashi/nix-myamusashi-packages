@@ -2181,11 +2181,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791169312,
-        "narHash": "sha256-SmSL5xFJsQtQ8w/fhcpRF7xT73V40szUA9mmJxW36uA=",
+        "lastModified": 1791340443,
+        "narHash": "sha256-DRWNE3P2ekB4O6QTjOKSH8lxEFXuFWTv9mZbaQM2w5E=",
         "ref": "refs/heads/master",
-        "rev": "b8994fd6ff12074c8bc8d6a1064e203254789cd8",
-        "revCount": 10,
+        "rev": "fb3c6bd0358ca492a7775edb532a8fc765f543e1",
+        "revCount": 15,
         "type": "git",
         "url": "https://git.myamusashi.cc/myamusashi/mangaDesk"
       },
