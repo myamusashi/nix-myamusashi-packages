@@ -2508,11 +2508,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791404758,
-        "narHash": "sha256-hoxW+sK/Pgt7M++rqsVAQCjzaMusONXyk9K2y+pa6sI=",
+        "lastModified": 1791479104,
+        "narHash": "sha256-tS82RxK7C3dtJ2WyzOROpLuOyC9euIwcLI3VrURhhhQ=",
         "owner": "ViceVerse-cz",
         "repo": "Serein",
-        "rev": "a76e030d749ef558e687bbff6dc592a7dddec244",
+        "rev": "b5e8132f88d5947f72f27680dc331928ef6bca45",
         "type": "github"
       },
       "original": {
