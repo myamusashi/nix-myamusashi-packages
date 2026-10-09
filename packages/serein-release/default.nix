@@ -25,7 +25,7 @@
     version = "1.0.0-nightly.20261007.55";
 
     src = fetchurl {
-        url = "https://github.com{version}/serein-v${version}-Linux-X64.AppImage";
+        url = "https://github.com/ViceVerse-cz/Serein/releases/download/v${version}/serein-v${version}-Linux-X64.AppImage";
         hash = "sha256-MsbqeHuL1pIJG5Gq8M5NG81WYB4dpbkjp+WjvBsJYAY=";
     };
 
