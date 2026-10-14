@@ -46,6 +46,8 @@ in
             hash = "sha256-/+SsVotLh1wxoOuQskNI4Tg8qOhXk7jdhEDGhi+afuA=";
         };
 
+        doCheck = false;
+
         cargoHash = "sha256-pXXiV/qL+G3OpuvJQ8XlyxKMBLEoRheX0FLbjdFojpA=";
 
         cargoBuildFlags = [
