@@ -2327,11 +2327,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1791850738,
-        "narHash": "sha256-PICSnJ5JizWNIJfA9HZIXFWnZWcEBuOpQDtDd+SJrm0=",
+        "lastModified": 1791931197,
+        "narHash": "sha256-EFL/YGZSrZoqWJlSxvtiSOj/ynBxYDI/R104RCL8zXk=",
         "owner": "can1357",
         "repo": "oh-my-pi",
-        "rev": "818dd42b73ab1caad17fa06d4edcc3a97086dc57",
+        "rev": "b91db66e9b0b65a2c977e6a5bc74b0f4b1d58d1c",
         "type": "github"
       },
       "original": {
@@ -2508,11 +2508,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791645576,
-        "narHash": "sha256-yPpHHOeZ6NGW0tn2V+WCFOhKAQlVOhdveT2R34Hk5BE=",
+        "lastModified": 1791942357,
+        "narHash": "sha256-r5ErSw/LSFL+bQtR02aitVkMNI0GhNPqCePQlHshg9c=",
         "owner": "ViceVerse-cz",
         "repo": "Serein",
-        "rev": "134e556fb469f3fa72425adf24acb7df56811a59",
+        "rev": "d1af883c9d7dda90d1261a2d15fc852a5445204d",
         "type": "github"
       },
       "original": {
@@ -2992,11 +2992,11 @@
         "rust-overlay": "rust-overlay_2"
       },
       "locked": {
-        "lastModified": 1791604092,
-        "narHash": "sha256-kY2u4y/Db8tnWqbjmibsPCd1oP2PRgI7WGv5gtZZ644=",
+        "lastModified": 1791963720,
+        "narHash": "sha256-apce9vUJJZ2rL8BymIW2ilXiTWRzgSn04oZB5EXAmiE=",
         "owner": "crmne",
         "repo": "zapfast",
-        "rev": "48f4faf5a7d0cebc6f25cb9e3181d2659a351f62",
+        "rev": "a80bd7df6ef73de0ab344edfa5959faab3f03d2c",
         "type": "github"
       },
       "original": {
