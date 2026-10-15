@@ -24,6 +24,10 @@
             url = "git+https://git.myamusashi.cc/myamusashi/mangaDesk";
             inputs.nixpkgs.follows = "nixpkgs";
         };
+        lightauth = {
+            url = "git+https://git.myamusashi.cc/myamusashi/lightauth";
+            inputs.nixpkgs.follows = "nixpkgs";
+        };
         qmlformat-rs = {
             url = "git+https://git.myamusashi.cc/myamusashi/qmlformat-rs";
             inputs.nixpkgs.follows = "nixpkgs";

@@ -2174,6 +2174,26 @@
         "type": "github"
       }
     },
+    "lightauth": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792040813,
+        "narHash": "sha256-Cn+8X8k/1O2QM5koA/qi9JFGvttL2pKQQtMZ1aAZPy0=",
+        "ref": "refs/heads/master",
+        "rev": "e153905c00b2e0e2543f2ed0c26c6bffc085b3d6",
+        "revCount": 20,
+        "type": "git",
+        "url": "https://git.myamusashi.cc/myamusashi/lightauth"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://git.myamusashi.cc/myamusashi/lightauth"
+      }
+    },
     "mangaDesk": {
       "inputs": {
         "nixpkgs": [
@@ -2446,6 +2466,7 @@
         "hyprwayland-scanner": "hyprwayland-scanner_11",
         "hyprwire": "hyprwire_2",
         "kwin-effects-forceblur": "kwin-effects-forceblur",
+        "lightauth": "lightauth",
         "mangaDesk": "mangaDesk",
         "neovim-nightly-overlay": "neovim-nightly-overlay",
         "nixpkgs": "nixpkgs",
