@@ -12,6 +12,7 @@
         serein
         mangaDesk
         qmlformat-rs
+        lightauth
         ;
 
     discoverPackages = {
@@ -64,6 +65,7 @@ in {
         qsPackages = quickshell.packages.${system}.default;
         mangaDeskPkgs = mangaDesk.packages.${system}.default;
         qmlformatRsPkgs = qmlformat-rs.packages.${system}.default;
+        lightauthPkgs = lightauth.packages.${system}.default;
     in {
         formatter = pkgs.alejandra;
 
@@ -83,6 +85,7 @@ in {
                 quickshell = qsPackages;
                 mangaDesk = mangaDeskPkgs;
                 qmlformat-rs = qmlformatRsPkgs;
+                lightauth = lightauthPkgs;
             };
     };
 }
