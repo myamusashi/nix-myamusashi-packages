@@ -1,4 +1,13 @@
-{php-lsp-src}: final: prev: {
+{
+    serein-src,
+    php-lsp-src,
+}: final: prev: {
+    serein = prev.serein.overrideAttrs (oldAttrs: {
+        patches = [
+            ./serein-ffmpeg-encoding-gpu-routing-8k-controls.patch
+        ];
+    });
+
     php-lsp = final.rustPlatform.buildRustPackage (
         let
             manifest = (final.lib.importTOML (php-lsp-src + "/Cargo.toml")).package;

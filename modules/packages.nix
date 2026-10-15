@@ -12,6 +12,7 @@
         serein
         mangaDesk
         qmlformat-rs
+        lightauth
         ;
 
     discoverPackages = {
@@ -52,18 +53,23 @@ in {
 
         atpPkgs = aerothemeplasma-nix.packages.${system} or {};
 
-        pkgsWithPhplsp = pkgs.extend (import ../overlays/php-lsp.nix {
+        pkgsWithPhplsp = pkgs.extend (import ../overlays {
             php-lsp-src = php-lsp.outPath;
+        });
+        sereinExperimentalPkgs = pkgs.extend (import ../overlays {
+            serein-src = serein.outPath;
         });
 
         ompPkgs = omp.packages.${system}.default;
         phplsp = pkgsWithPhplsp.php-lsp;
         zapfastPkgs = zapfast.packages.${system}.default;
         sereinPkgs = serein.packages.${system}.default;
+        sereinExxPkgs = sereinExperimentalPkgs.serein;
         wlScrnFork = wl-screenrec-fork.packages.${system}.default;
         qsPackages = quickshell.packages.${system}.default;
         mangaDeskPkgs = mangaDesk.packages.${system}.default;
         qmlformatRsPkgs = qmlformat-rs.packages.${system}.default;
+        lightauthPkgs = lightauth.packages.${system}.default;
     in {
         formatter = pkgs.alejandra;
 
@@ -80,9 +86,11 @@ in {
                 omp = ompPkgs;
                 zapfast = zapfastPkgs;
                 serein = sereinPkgs;
+                serein-experimental = sereinExxPkgs;
                 quickshell = qsPackages;
                 mangaDesk = mangaDeskPkgs;
                 qmlformat-rs = qmlformatRsPkgs;
+                lightauth = lightauthPkgs;
             };
     };
 }
