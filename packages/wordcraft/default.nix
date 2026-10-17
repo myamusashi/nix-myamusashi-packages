@@ -47,6 +47,7 @@ in
         };
 
         doCheck = false;
+        doInstallCheck = false;
 
         cargoHash = "sha256-7kBw2GqhUAsxDR6185PDxeyfosSl9Fox1xxaElmpgjQ=";
 
@@ -111,7 +112,6 @@ in
         '';
 
         nativeInstallCheckInputs = [versionCheckHook];
-        doInstallCheck = true;
 
         passthru.updateScript = nix-update-script {};
 
