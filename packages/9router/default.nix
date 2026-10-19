@@ -5,13 +5,13 @@
 }:
 buildNpmPackage rec {
     pname = "9router";
-    version = "0.5.95";
+    version = "0.5.104";
 
     src = fetchFromGitHub {
         owner = "decolua";
         repo = pname;
         rev = "v${version}";
-        hash = "sha256-HDB2UCPa58IWivLC551SWusfguLyR1DP5UNJnoDVgjw=";
+        hash = "sha256-X/8BZRBpcIcNLt4i091/LaNxcMW7RIiAqH1jk+ODF9Y=";
     };
 
     npmDepsHash = "sha256-Tnkh3qOXKDtmUCF/pQqPX5vc5OsMkcj87SHZQMjfSDo=";
