@@ -16,6 +16,10 @@
             url = "github:nix-community/neovim-nightly-overlay";
             inputs.nixpkgs.follows = "nixpkgs";
         };
+        loaf-fm = {
+            url = "github:m-uvex/loaf-fm";
+            inputs.nixpkgs.follows = "nixpkgs";
+        };
         mangaDesk = {
             url = "git+https://git.myamusashi.cc/myamusashi/mangaDesk";
             inputs.nixpkgs.follows = "nixpkgs";

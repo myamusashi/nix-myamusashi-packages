@@ -12,6 +12,7 @@
         mangaDesk
         qmlformat-rs
         lightauth
+        loaf-fm
         ;
 
     discoverPackages = {
@@ -63,6 +64,7 @@ in {
         mangaDeskPkgs = mangaDesk.packages.${system}.default;
         qmlformatRsPkgs = qmlformat-rs.packages.${system}.default;
         lightauthPkgs = lightauth.packages.${system}.default;
+        loafFmPkgs = loaf-fm.packages.${system}.default;
     in {
         formatter = pkgs.alejandra;
 
@@ -82,6 +84,7 @@ in {
                 mangaDesk = mangaDeskPkgs;
                 qmlformat-rs = qmlformatRsPkgs;
                 lightauth = lightauthPkgs;
+                loaf-fm = loafFmPkgs;
             };
     };
 }
