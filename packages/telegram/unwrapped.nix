@@ -12,6 +12,7 @@
     tdlib,
     tg_owt ? callPackage ./tg_owt.nix {inherit stdenv;},
     tlottie ? callPackage ./tlottie.nix {},
+    wallet_engine ? callPackage ./wallet-engine.nix {},
     lz4,
     xxhash,
     ffmpeg_6,
@@ -27,7 +28,6 @@
     microsoft-gsl,
     boost,
     ada,
-    cmark-gfm,
     nix-update-script,
 }:
 # Main reference:
@@ -70,11 +70,11 @@ stdenv.mkDerivation (finalAttrs: {
         rnnoise
         tg_owt
         tlottie
+        wallet_engine
         pango
         microsoft-gsl
         boost
         ada
-        cmark-gfm
         (tdlib.override {tde2eOnly = true;})
         protobuf
         qt6.qtwayland
