@@ -12,10 +12,6 @@
             url = "github:myamusashi/wl-screenrec";
             inputs.nixpkgs.follows = "nixpkgs";
         };
-        aerothemeplasma-nix = {
-            url = "github:myamusashi/aerothemeplasma-nix";
-            inputs.nixpkgs.follows = "nixpkgs";
-        };
         neovim-nightly-overlay = {
             url = "github:nix-community/neovim-nightly-overlay";
             inputs.nixpkgs.follows = "nixpkgs";

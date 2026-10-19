@@ -3,7 +3,6 @@
         (inputs)
         hyprland
         php-lsp
-        aerothemeplasma-nix
         neovim-nightly-overlay
         wl-screenrec-fork
         omp
@@ -51,8 +50,6 @@ in {
 
         pkgsWithNeovim = pkgs.extend neovim-nightly-overlay.overlays.default;
 
-        atpPkgs = aerothemeplasma-nix.packages.${system} or {};
-
         pkgsWithPhplsp = pkgs.extend (import ../overlays/php-lsp.nix {
             php-lsp-src = php-lsp.outPath;
         });
@@ -75,7 +72,6 @@ in {
                 directory = ../packages;
             })
             // {inherit (pkgsWithNeovim) neovim;}
-            // atpPkgs
             // {
                 wl-screenrec-fork = wlScrnFork;
                 php-lsp = phplsp;
