@@ -113,7 +113,7 @@
             inputs.nixpkgs.follows = "nixpkgs";
         };
         serein = {
-            url = "github:ViceVerse-cz/Serein";
+            url = "github:myamusashi/Serein/new-release";
             inputs.nixpkgs.follows = "nixpkgs";
         };
         quickshell = {
