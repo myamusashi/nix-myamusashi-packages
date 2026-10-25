@@ -10,7 +10,7 @@
 }:
 rustPlatform.buildRustPackage (finalAttrs: {
     pname = "wallet-engine";
-    version = "unstable-e59e0d89d";
+    version = "unstable-e59e0d89";
     __structuredAttrs = true;
 
     src = fetchFromGitHub {

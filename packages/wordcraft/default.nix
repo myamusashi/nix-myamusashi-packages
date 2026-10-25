@@ -34,7 +34,7 @@
 in
     rustPlatform.buildRustPackage (finalAttrs: {
         pname = "wordcraft";
-        version = "unstable-d588e0b8";
+        version = "unstable-b70c746f";
 
         __structuredAttrs = true;
         strictDeps = true;
@@ -42,14 +42,14 @@ in
         src = fetchFromGitHub {
             owner = "storytold";
             repo = "wordcraft";
-            rev = "d588e0b87329975d0b06a9cf91e4d7d2ebacb0f8";
-            hash = "sha256-76BDLKg+2KaQ+DkiGAisMAfVk3EG7g2t0gMUmSfnPso=";
+            rev = "b70c746f9bb70f830c5377f7710fc31dd3e8f195";
+            hash = "sha256-ha0T0kwuiPGe6y7UQBulW8GG2OE151AOIA+sFL9AuXg=";
         };
 
         doCheck = false;
         doInstallCheck = false;
 
-        cargoHash = "sha256-eHrYMklNn1j7qVgtN2dXyaR+ImhtxSRUvUrEZ2AyygQ=";
+        cargoHash = "sha256-2ZqHAdjVjJuWbjUAFLLLVnDV6MaGZuvPU/2basvgHMY=";
 
         cargoBuildFlags = [
             "--package=wordcraft"
