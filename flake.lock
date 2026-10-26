@@ -2149,16 +2149,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1792924058,
-        "narHash": "sha256-9GaQwIPZmW6TrPMZU8yCWCTShCVFv+ccAskRQUo6F+o=",
+        "lastModified": 1792973390,
+        "narHash": "sha256-QeiiM6UDwjoqk401qUlFiAwfEbSo1MnvuHMqaeonujA=",
         "owner": "m-uvex",
         "repo": "loaf-fm",
-        "rev": "5221f3c119ad3fa458e7d9bf5222ce7c8a5ee011",
+        "rev": "a63de4dffc2771af06a309b01ca88ee9d8da5fdb",
         "type": "github"
       },
       "original": {
         "owner": "m-uvex",
-        "ref": "dev",
+        "ref": "main",
         "repo": "loaf-fm",
         "type": "github"
       }
