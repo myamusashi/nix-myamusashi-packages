@@ -2128,11 +2128,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792596425,
-        "narHash": "sha256-2eB/O8Bgd0sTm/xEphoOb1DmWgFquzFrQcUfo23MaCI=",
+        "lastModified": 1792972910,
+        "narHash": "sha256-vI7WElM59mhgiTFp+lm0+knXZgyEJHWpXc+XMjWWd2E=",
         "ref": "refs/heads/master",
-        "rev": "44f964b49d67cc1107a36383553237aadb23a4ac",
-        "revCount": 32,
+        "rev": "6485d73561bc92af0cd13e214dc5ec3e892054b7",
+        "revCount": 33,
         "type": "git",
         "url": "https://git.myamusashi.cc/myamusashi/lightauth"
       },
