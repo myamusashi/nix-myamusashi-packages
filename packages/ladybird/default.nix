@@ -187,10 +187,11 @@ in
                         tag = "v0.3.4";
                         hash = "sha256-XiaHus+bZ4jAk2zwinzz7VzyThCNlx36Auqyw2OH5rM=";
                     };
-                    postInstall = lib.replaceStrings
-                    ["release/c/wuffs-unsupported-snapshot.c" "wuffs-v0.4.c"]
-                    ["release/c/wuffs-v0.3.c" "wuffs-v0.3.c"]
-                    prev.postInstall;
+                    postInstall =
+                        lib.replaceStrings
+                        ["release/c/wuffs-unsupported-snapshot.c" "wuffs-v0.4.c"]
+                        ["release/c/wuffs-v0.3.c" "wuffs-v0.3.c"]
+                        prev.postInstall;
                 }))
                 woff2
                 icu78

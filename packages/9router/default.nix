@@ -5,16 +5,19 @@
 }:
 buildNpmPackage rec {
     pname = "9router";
-    version = "0.5.109";
+    version = "0.5.112";
 
     src = fetchFromGitHub {
         owner = "decolua";
         repo = pname;
         rev = "v${version}";
-        hash = "sha256-Ausv3pO3hV9A/BUc8Va9F38GTPUZ0xobFwyN/cU5+OA=";
+        hash = "sha256-FZ8sDiEVtDHXS5754dLtm/J/yd17J4kkHoHqb2ihLU8=";
     };
 
-    npmDepsHash = "sha256-Tnkh3qOXKDtmUCF/pQqPX5vc5OsMkcj87SHZQMjfSDo=";
+    npmDepsFetcherVersion = 2;
+    makeCacheWritable = true;
+    npmFlags = ["--legacy-peer-deps"];
+    npmDepsHash = "sha256-8aP4G1plMC1Vxrl440nBXbL6AYF0OTQef8scUqkUQOc=";
 
     postPatch = ''
         cp ${./package-lock.json} package-lock.json

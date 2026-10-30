@@ -36,7 +36,7 @@
 #     layout (true for stock Gitea/Forgejo instances).
 
 def gh-headers [] {
-    let token = ($env.GITHUB_TOKEN? | default "")
+    let token = $env.GITHUB_TOKEN? | default ""
     if ($token | is-empty) {
         []
     } else {
@@ -45,47 +45,58 @@ def gh-headers [] {
 }
 
 def gh-latest-release-tag [owner: string, repo: string] {
+
     # Fetch all tags and pick the highest version using semantic sort
     # (git/refs/tags returns by push date, not version — can't trust order).
     try {
-        let refs = (http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)/git/refs/tags")
-        let tags = ($refs | each {|r| ($r.ref | str replace "refs/tags/" "") })
+        let refs = (
+            http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)/git/refs/tags"
+        )
+        let tags = $refs | each {|r| ($r.ref | str replace "refs/tags/" "") }
         ($tags | str join "\n") | ^sort -V | lines | last
     } catch {
         # fallback: /releases/latest
-        let release = (http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)/releases/latest")
+        let release = (
+            http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)/releases/latest"
+        )
         $release.tag_name
     }
 }
 
 def gh-default-branch-sha [owner: string, repo: string] {
-    let repo_info = (http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)")
+    let repo_info = (
+        http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)"
+    )
     let branch = $repo_info.default_branch
-    let commit = (http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)/commits/($branch)")
+    let commit = (
+        http get --headers (gh-headers) $"https://api.github.com/repos/($owner)/($repo)/commits/($branch)"
+    )
     $commit.sha
 }
 
 def gitea-latest-tag [domain: string, owner: string, repo: string] {
     let tags = (http get $"https://($domain)/api/v1/repos/($owner)/($repo)/tags")
-    let names = ($tags | each {|t| $t.name })
+    let names = $tags | each {|t| $t.name }
     ($names | str join "\n") | ^sort -V | lines | last
 }
 
 def gitea-default-branch-sha [domain: string, owner: string, repo: string] {
     let repo_info = (http get $"https://($domain)/api/v1/repos/($owner)/($repo)")
     let branch = $repo_info.default_branch
-    let branch_info = (http get $"https://($domain)/api/v1/repos/($owner)/($repo)/branches/($branch)")
+    let branch_info = (
+        http get $"https://($domain)/api/v1/repos/($owner)/($repo)/branches/($branch)"
+    )
     $branch_info.commit.id
 }
 
 def prefetch-hash [url: string] {
-    let result = (nix store prefetch-file --unpack --hash-type sha256 --json $url | from json)
+    let result = nix store prefetch-file --unpack --hash-type sha256 --json $url | from json
     $result.hash
 }
 
 def extract-field [content: string, key: string] {
     let pattern = ($key + '\s*=\s*"(?P<v>[^"]+)"')
-    let matches = ($content | parse -r $pattern)
+    let matches = $content | parse -r $pattern
     if ($matches | is-empty) {
         null
     } else {
@@ -98,9 +109,14 @@ def extract-field [content: string, key: string] {
 # inside cargoDeps, or a second `hash` for a separate fetcher).
 def replace-quoted-field [content: string, key: string, new_value: string] {
     let anchored = ('^\s*' + $key + '\s*=\s*"')
-    let escaped_value = ($new_value | str replace -a '$' '$$')
-    let lines = ($content | lines)
-    let match = ($lines | enumerate | where {|it| ($it.item =~ $anchored)} | first)
+    let escaped_value = $new_value | str replace -a '$' '$$'
+    let lines = $content | lines
+    let match = (
+        $lines
+        | enumerate
+        | where {|it| ($it.item =~ $anchored)}
+        | first
+    )
     if $match == null { return $content }
     let idx = $match.index
     $lines
@@ -114,16 +130,33 @@ def replace-quoted-field [content: string, key: string, new_value: string] {
 # with a freshly generated block built from `entries` (a list of {name, hash}).
 # Preserves the indentation of the `outputHashes` line itself and indents
 # entries one level deeper (4 extra spaces, matching this repo's style).
-def replace-output-hashes-block [content: string, entries: list] {
-    let lines = ($content | lines)
-    let start_match = ($lines | enumerate | where {|it| ($it.item =~ '^\s*outputHashes\s*=\s*\{')} | first)
+def replace-output-hashes-block [content: string, entries: list<any>] {
+    let lines = $content | lines
+    let start_match = (
+        $lines
+        | enumerate
+        | where {|it| ($it.item =~ '^\s*outputHashes\s*=\s*\{')}
+        | first
+    )
     if $start_match == null { return $content }
     let start_idx = $start_match.index
-    let indent = ($lines | get $start_idx | parse -r '^(?<i>\s*)outputHashes' | first | get i)
+    let indent = (
+        $lines
+        | get $start_idx
+        | parse -r '^(?<i>\s*)outputHashes'
+        | first
+        | get i
+    )
     # find the matching closing "};" by scanning forward for a line that is
     # just the same indent + "};" (this repo always closes attrsets that way)
     let close_pattern = ('^' + $indent + '\};')
-    let end_match = ($lines | enumerate | skip ($start_idx + 1) | where {|it| ($it.item =~ $close_pattern)} | first)
+    let end_match = (
+        $lines
+        | enumerate
+        | skip ($start_idx + 1)
+        | where {|it| ($it.item =~ $close_pattern)}
+        | first
+    )
     if $end_match == null { return $content }
     let end_idx = $end_match.index
 
@@ -133,10 +166,10 @@ def replace-output-hashes-block [content: string, entries: list] {
     } else {
         $entries | each {|e| $"($entry_indent)\"($e.name)\" = \"($e.hash)\";" }
     }
-    let new_block = ([$"($indent)outputHashes = {"] | append $body | append $"($indent)};")
+    let new_block = [$"($indent)outputHashes = {"] | append $body | append $"($indent)};"
 
-    let before = ($lines | first $start_idx)
-    let after = ($lines | skip ($end_idx + 1))
+    let before = $lines | first $start_idx
+    let after = $lines | skip ($end_idx + 1)
     ($before | append $new_block | append $after) | str join "\n"
 }
 
@@ -147,14 +180,14 @@ def replace-output-hashes-block [content: string, entries: list] {
 # into {url, rev}. The fragment after `#` is always the resolved commit sha,
 # so key off that rather than the query param (which varies in shape).
 def parse-git-source [source: string] {
-    let no_prefix = ($source | str replace -r '^git\+' '')
-    let parts = ($no_prefix | split row '#')
+    let no_prefix = $source | str replace -r '^git\+' ''
+    let parts = $no_prefix | split row '#'
     if ($parts | length) < 2 {
         null
     } else {
-        let rev = ($parts | last)
-        let url = (($parts | first) | split row '?' | first)
-        { url: $url, rev: $rev }
+        let rev = $parts | last
+        let url = ($parts | first) | split row '?' | first
+        {url: $url, rev: $rev}
     }
 }
 
@@ -167,13 +200,13 @@ def prefetch-git-hash [url: string, rev: string, submodules: bool = false] {
         if $submodules {
             $args = ($args | append "--fetch-submodules")
         }
-        let result = (nix run "nixpkgs#nix-prefetch-git" -- ...$args | complete)
+        let result = nix run "nixpkgs#nix-prefetch-git" -- ...$args | complete
         if $result.exit_code != 0 {
             return null
         }
-        let parsed = ($result.stdout | from json)
+        let parsed = $result.stdout | from json
         let base32 = $parsed.sha256
-        let sri = (nix hash convert --to sri --hash-algo sha256 $base32 | str trim)
+        let sri = nix hash convert --to sri --hash-algo sha256 $base32 | str trim
         if ($sri | is-empty) { null } else { $sri }
     } catch {
         null
@@ -189,7 +222,12 @@ def prefetch-git-hash [url: string, rev: string, submodules: bool = false] {
 # submodule checkout, so the tarball hash can never match and the build always
 # dies with "hash mismatch in fixed-output derivation". Such packages must be
 # hashed via nix-prefetch-git --fetch-submodules.
-def prefetch-src-hash [content: string, git_url: string, archive_url: string, ref: string] {
+def prefetch-src-hash [
+    content: string
+    git_url: string
+    archive_url: string
+    ref: string
+] {
     if ($content | str contains "fetchSubmodules = true") {
         print "  fetchSubmodules = true — hashing the git checkout with submodules"
         prefetch-git-hash $git_url $ref true
@@ -203,16 +241,16 @@ def prefetch-src-hash [content: string, git_url: string, archive_url: string, re
 # packages under `packages/*/deps/*.nix` aren't exposed as `.#<pname>` flake
 # outputs, so they're built via a temp expression + callPackage instead.
 def build-package [file: string, pname: string] {
-    let is_dep = ($file | str contains "/deps/")
+    let is_dep = $file | str contains "/deps/"
     if $is_dep {
         let tmp = "/tmp/update-dep.nix"
         let root = (pwd)
         let system = (^uname -m | str trim)
         let system = match $system {
-            "x86_64" => "x86_64-linux"
-            "aarch64" => "aarch64-linux"
-            "arm64" => "aarch64-linux"
-            "i686" => "i686-linux"
+            x86_64 => "x86_64-linux"
+            aarch64 => "aarch64-linux"
+            arm64 => "aarch64-linux"
+            i686 => "i686-linux"
             _ => $"($system)-linux"
         }
         let nix_tpl = 'let
@@ -242,7 +280,12 @@ def update-cargo-lock-output-hashes [file: string, archive_url: string] {
 
     let tmpdir = (mktemp -d)
     print $"  extracting source to ($tmpdir) to read Cargo.lock ..."
-    let extract = (do -i { ^curl -fsSL $archive_url | ^tar -xz -C $tmpdir --strip-components=1 } | complete)
+    let extract = (
+        do -i {
+            ^curl -fsSL $archive_url | ^tar -xz -C $tmpdir --strip-components=1
+        }
+        | complete
+    )
     if $extract.exit_code != 0 {
         print "  ⚠ could not extract source archive, skipping outputHashes"
         rm -rf $tmpdir
@@ -257,7 +300,13 @@ def update-cargo-lock-output-hashes [file: string, archive_url: string] {
     }
 
     # `Cargo.lock` has no extension `open` recognizes, so parse explicitly.
-    let parsed_lock = (try { open --raw $lockfile | from toml } catch { null })
+    let parsed_lock = (
+        try {
+            open --raw $lockfile | from toml
+        } catch {
+            null
+        }
+    )
     if $parsed_lock == null {
         print "  ⚠ could not parse Cargo.lock as TOML, skipping outputHashes"
         rm -rf $tmpdir
@@ -285,12 +334,17 @@ def update-cargo-lock-output-hashes [file: string, archive_url: string] {
 
     # dedupe by (url, rev) — a workspace repo can supply several crates at
     # one commit and only needs to be prefetched once
-    let unique_sources = ($git_packages | group-by {|p| $"($p.url)#($p.rev)" } | transpose key group | each {|g| $g.group | first })
+    let unique_sources = (
+        $git_packages
+        | group-by {|p| $"($p.url)#($p.rev)" }
+        | transpose key group
+        | each {|g| $g.group | first }
+    )
 
     print $"  found ($git_packages | length) git dep\(s\) across ($unique_sources | length) unique repo/rev pair\(s\)"
 
-    mut resolved = {}   # "url#rev" -> sri hash
-    mut failed = []      # list of {url, rev} that Plan B couldn't resolve
+    mut resolved = {} # "url#rev" -> sri hash
+    mut failed = [] # list of {url, rev} that Plan B couldn't resolve
 
     for src in $unique_sources {
         let key = $"($src.url)#($src.rev)"
@@ -310,7 +364,7 @@ def update-cargo-lock-output-hashes [file: string, archive_url: string] {
     let resolved_snapshot = $resolved
     let entries = ($git_packages | each {|p|
         let key = $"($p.url)#($p.rev)"
-        let hash = ($resolved_snapshot | get -o $key)
+        let hash = $resolved_snapshot | get -o $key
         { name: $p.name, hash: ($hash | default "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=") }
     })
 
@@ -325,7 +379,7 @@ def update-cargo-lock-output-hashes [file: string, archive_url: string] {
     # --- Plan A fallback: build-loop for whichever entries Plan B couldn't resolve ---
     print $"  falling back to build-loop for ($failed | length) unresolved dep\(s\)"
     mut attempts = 0
-    let max_attempts = (($git_packages | length) + 2)  # 1 rebuild per remaining fake hash, plus slack
+    let max_attempts = (($git_packages | length) + 2) # 1 rebuild per remaining fake hash, plus slack
 
     while $attempts < $max_attempts {
         $attempts = $attempts + 1
@@ -334,23 +388,31 @@ def update-cargo-lock-output-hashes [file: string, archive_url: string] {
             print "  ✓ outputHashes resolved via build-loop"
             return
         }
-        let stderr = ($result.stderr | str trim)
+        let stderr = $result.stderr | str trim
 
         # case 1: a key is entirely missing from outputHashes (shouldn't happen
         # here since we always seed every known crate, but handled for safety)
-        let missing_match = ($stderr | parse -r 'No hash was found while vendoring the git dependency (?<k>[^\s]+)')
+        let missing_match = (
+            $stderr
+            | parse -r 'No hash was found while vendoring the git dependency (?<k>[^\s]+)'
+        )
         if not ($missing_match | is-empty) {
             let missing_key = ($missing_match | first).k
             print $"  ⚠ missing outputHashes entry for ($missing_key), adding placeholder"
             let cur = (open --raw $file)
-            let cur = (replace-output-hashes-block $cur ((extract-output-hash-entries $cur) | append { name: $missing_key, hash: "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" }))
+            let cur = (
+                replace-output-hashes-block $cur (
+                    (extract-output-hash-entries $cur)
+                    | append { name: $missing_key, hash: "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" }
+                )
+            )
             $"($cur)\n" | save -f $file
             continue
         }
 
         # case 2: a fixed-output hash mismatch — fill the first remaining
         # fakeHash-looking entry with the `got:` hash from this error
-        let got_match = ($stderr | parse -r 'got:\s*(?<g>sha256-[^\s]+)')
+        let got_match = $stderr | parse -r 'got:\s*(?<g>sha256-[^\s]+)'
         if ($got_match | is-empty) {
             print '  ⚠ could not parse outputHashes mismatch from build output, showing first 20 lines:'
             $stderr | lines | first 20 | each {|l| print $"  ($l)" }
@@ -359,12 +421,20 @@ def update-cargo-lock-output-hashes [file: string, archive_url: string] {
         let got_hash = ($got_match | first).g
         let cur = (open --raw $file)
         let cur_entries = (extract-output-hash-entries $cur)
-        let placeholder_idx = ($cur_entries | enumerate | where {|it| $it.item.hash == "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="} | first)
+        let placeholder_idx = (
+            $cur_entries
+            | enumerate
+            | where {|it| $it.item.hash == "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="}
+            | first
+        )
         if $placeholder_idx == null {
             print "  ⚠ build still failing but no placeholder entries left to fill, giving up"
             return
         }
-        let new_entries = ($cur_entries | update $placeholder_idx.index {|e| {name: $e.name, hash: $got_hash} })
+        let new_entries = (
+            $cur_entries
+            | update $placeholder_idx.index {|e| {name: $e.name, hash: $got_hash} }
+        )
         print $"  ✓ ($placeholder_idx.item.name): ($got_hash)"
         let cur = (replace-output-hashes-block $cur $new_entries)
         $"($cur)\n" | save -f $file
@@ -379,25 +449,47 @@ def update-cargo-lock-output-hashes [file: string, archive_url: string] {
 # lines between the outputHashes brace and its matching close, so it can't
 # pick up unrelated quoted key/value lines elsewhere in the file.
 def extract-output-hash-entries [content: string] {
-    let lines = ($content | lines)
-    let start_match = ($lines | enumerate | where {|it| ($it.item =~ '^\s*outputHashes\s*=\s*\{')} | first)
+    let lines = $content | lines
+    let start_match = (
+        $lines
+        | enumerate
+        | where {|it| ($it.item =~ '^\s*outputHashes\s*=\s*\{')}
+        | first
+    )
     if $start_match == null { return [] }
     let start_idx = $start_match.index
-    let indent = ($lines | get $start_idx | parse -r '^(?<i>\s*)outputHashes' | first | get i)
+    let indent = (
+        $lines
+        | get $start_idx
+        | parse -r '^(?<i>\s*)outputHashes'
+        | first
+        | get i
+    )
     let close_pattern = ('^' + $indent + '\};')
-    let end_match = ($lines | enumerate | skip ($start_idx + 1) | where {|it| ($it.item =~ $close_pattern)} | first)
+    let end_match = (
+        $lines
+        | enumerate
+        | skip ($start_idx + 1)
+        | where {|it| ($it.item =~ $close_pattern)}
+        | first
+    )
     if $end_match == null { return [] }
     let end_idx = $end_match.index
     let inner_count = ($end_idx - $start_idx - 1)
-    let body = ($lines | skip ($start_idx + 1) | first $inner_count | str join "\n")
+    let body = (
+        $lines
+        | skip ($start_idx + 1)
+        | first $inner_count
+        | str join "\n"
+    )
     ($body | parse -r '"(?<name>[^"]+)"\s*=\s*"(?<hash>[^"]+)";')
 }
 
 def update-package [file: string] {
     let content = (open --raw $file)
 
-    let is_github = ($content | str contains "fetchFromGitHub")
-    let is_gitea = ($content | str contains "fetchFromGitea")
+    let is_github = $content | str contains "fetchFromGitHub"
+    let is_gitea = $content | str contains "fetchFromGitea"
 
     if (not $is_github) and (not $is_gitea) {
         print $"  - skip: no fetchFromGitHub/fetchFromGitea found"
@@ -409,7 +501,12 @@ def update-package [file: string] {
 
     # resolve bare-variable repo = pname; (e.g. 9router.nix, neovide.nix)
     if $repo == null {
-        let repo_line = ($content | lines | where ($it | str contains "repo =") | first)
+        let repo_line = (
+            $content
+            | lines
+            | where ($it | str contains "repo =")
+            | first
+        )
         if ($repo_line | str contains "repo = pname;") {
             $repo = (extract-field $content "pname")
         }
@@ -424,12 +521,12 @@ def update-package [file: string] {
     let is_tagged = ($version_value != null) and (not ($version_value | str starts-with "unstable-"))
 
     mut new_version = ""
-    mut archive_ref = ""       # ref/tag used in the archive URL (full sha or tag name)
+    mut archive_ref = "" # ref/tag used in the archive URL (full sha or tag name)
     mut rev_key = ""
     mut archive_base = ""
     mut git_base = ""
     mut should_update_rev = true
-    mut file_rev = ""          # value to write into rev/tag (full sha or tag name)
+    mut file_rev = "" # value to write into rev/tag (full sha or tag name)
     mut domain = ""
 
     if $is_github {
@@ -439,7 +536,7 @@ def update-package [file: string] {
     } else {
         $rev_key = "tag"
         $domain = (extract-field $content "domain")
-        if ($domain == null) {
+        if $domain == null {
             print $"  ! could not find domain for Gitea fetch, skipping"
             return
         }
@@ -448,6 +545,7 @@ def update-package [file: string] {
     }
 
     if $is_tagged {
+
         # --- tagged mode: fetch latest release tag ---
         let tag = if $is_github {
             (gh-latest-release-tag $owner $repo)
@@ -472,7 +570,7 @@ def update-package [file: string] {
         } else {
             (gitea-default-branch-sha $domain $owner $repo)
         }
-        let short = ($sha | str substring 0..7)
+        let short = $sha | str substring 0..7
         print $"  latest commit: ($short)"
         $new_version = $"unstable-($short)"
         $archive_ref = $sha
@@ -506,15 +604,19 @@ def update-package [file: string] {
         print $"  checking cargoHash ..."
         let pname = (extract-field $content "pname")
         let result = (build-package $file $pname)
-        if ($result.exit_code == 0) {
+        if $result.exit_code == 0 {
             print $"  ✓ cargoHash already correct"
         } else {
-            let stderr = ($result.stderr | str trim)
-            let cargo_match = ($stderr | parse -r 'got:\s*sha256-(?<g>[^\s]+)')
+            let stderr = $result.stderr | str trim
+            let cargo_match = $stderr | parse -r 'got:\s*sha256-(?<g>[^\s]+)'
             let expected = if not ($cargo_match | is-empty) { $"sha256-($cargo_match | first | get g)" } else { null }
             if $expected != null {
                 let new_content = (open --raw $file)
-                let new_content = (replace-quoted-field $new_content "cargoHash" $expected)
+                let new_content = ((replace-quoted-field
+                    $new_content
+                    "cargoHash"
+                    $expected
+                ))
                 $"($new_content)\n" | save -f $file
                 print $"  ✓ cargoHash updated to ($expected)"
             } else {
@@ -528,61 +630,81 @@ def update-package [file: string] {
         print $"  checking npmDepsHash ..."
         let pname = (extract-field $content "pname")
         let pkg_dest = $"packages/($pname)/package-lock.json"
-        mut lockfile = ([
+        let existing_lockfiles = ([
             $"packages/($pname)/package-lock.json",
             $"packages/($pname)/npm-shrinkwrap.json",
-        ] | where {|p| ($p | path exists) } | first)
+        ] | where {|path| ($path | path exists) })
+        mut lockfile = if ($existing_lockfiles | is-empty) {
+            null
+        } else {
+            $existing_lockfiles | first
+        }
 
-        # Extract source archive to check for a lockfile
         let tmpdir = (mktemp -d)
         print $"  extracting source to ($tmpdir) ..."
         ^curl -fsSL $archive_url | ^tar -xz -C $tmpdir --strip-components=1
-        let src_lockfile = ([
+        let source_lockfiles = ([
             $"($tmpdir)/package-lock.json",
-            $"($tmpdir)/npm-shrinkwrap.json"
-        ] | where {|p| ($p | path exists) } | first)
+            $"($tmpdir)/npm-shrinkwrap.json",
+        ] | where {|path| ($path | path exists) })
+        let source_lockfile = if ($source_lockfiles | is-empty) {
+            null
+        } else {
+            $source_lockfiles | first
+        }
 
-        if ($lockfile == null) {
-            if ($src_lockfile != null) {
-                # Found in source but not vendored — copy it to our tree
-                $lockfile = $pkg_dest
-                mkdir ($lockfile | path dirname)
-                cp $src_lockfile $lockfile
-                print "  copied lockfile from source into package tree"
-            } else {
-                # Repo excludes lockfile — generate it with npm install
-                print "  no lockfile in source, running npm install --package-lock-only ..."
-                let package_json = $"($tmpdir)/package.json"
-                if ($package_json | path exists) {
-                    ^npm --prefix $tmpdir install --package-lock-only | complete
-                    let generated = $"($tmpdir)/package-lock.json"
-                    if ($generated | path exists) {
-                        $lockfile = $pkg_dest
-                        mkdir ($lockfile | path dirname)
-                        cp $generated $lockfile
-                        print "  generated and copied package-lock.json into package tree"
-                    } else {
-                        print "  ⚠ npm install did not produce a lockfile, skipping npmDepsHash"
-                        rm -rf $tmpdir
-                        return
-                    }
+        if $source_lockfile != null {
+            $lockfile = $pkg_dest
+            mkdir ($lockfile | path dirname)
+            cp $source_lockfile $lockfile
+            print "  refreshed package lockfile from source"
+        } else {
+            let package_json = $"($tmpdir)/package.json"
+            if ($package_json | path exists) {
+                print "  no lockfile in source, generating one with npm install --package-lock-only ..."
+                let install_result = (^npm --prefix $tmpdir install --package-lock-only | complete)
+                let generated = $"($tmpdir)/package-lock.json"
+                if $install_result.exit_code == 0 and ($generated | path exists) {
+                    $lockfile = $pkg_dest
+                    mkdir ($lockfile | path dirname)
+                    cp $generated $lockfile
+                    print "  generated and refreshed package-lock.json"
                 } else {
-                    print "  ⚠ no package.json in source, skipping npmDepsHash"
+                    print $"  ⚠ npm install did not produce a lockfile: ($install_result.stderr | str trim)"
                     rm -rf $tmpdir
                     return
                 }
+            } else {
+                print "  ⚠ no package.json in source, skipping npmDepsHash"
+                rm -rf $tmpdir
+                return
             }
         }
 
-        let result = (nix run nixpkgs#prefetch-npm-deps -- $lockfile | complete)
-        if ($result.exit_code == 0) {
-            let expected = ($result.stdout | str trim)
+        let current_content = (open --raw $file)
+        let placeholder = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        let placeholder_content = (replace-quoted-field $current_content "npmDepsHash" $placeholder)
+        $"($placeholder_content)\n" | save -f $file
+        let build_result = (build-package $file $pname)
+        let hash_matches = $build_result.stderr | parse -r 'got:\s*(?<hash>sha256-[^\s]+)'
+        if not ($hash_matches | is-empty) {
+            let expected = ($hash_matches | first).hash
             let new_content = (open --raw $file)
-            let new_content = (replace-quoted-field $new_content "npmDepsHash" $expected)
+            let new_content = ((replace-quoted-field
+                $new_content
+                "npmDepsHash"
+                $expected
+            ))
             $"($new_content)\n" | save -f $file
             print $"  ✓ npmDepsHash updated to ($expected)"
         } else {
-            print $"  ⚠ prefetch-npm-deps failed: ($result.stderr | str trim)"
+            $"($current_content)\n" | save -f $file
+            if $build_result.exit_code == 0 {
+                print "  ✓ npmDepsHash already correct"
+            } else {
+                print '  ⚠ could not parse npmDepsHash from build output, showing first 20 lines:'
+                $build_result.stderr | lines | first 20 | each {|line| print $"  ($line)" }
+            }
         }
         rm -rf $tmpdir
     }
@@ -619,7 +741,7 @@ def main [...names: string] {
         print $"==> ($file)"
         try {
             update-package $file
-        } catch { |err|
+        } catch {|err|
             print -e $"  ! failed: ($err.msg)"
         }
     }

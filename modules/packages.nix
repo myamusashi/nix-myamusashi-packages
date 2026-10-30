@@ -35,10 +35,10 @@
         pkgNames = builtins.filter (n: isPkg n entries.${n}) (builtins.attrNames entries);
     in
         builtins.listToAttrs (map (name: {
-            inherit name;
-            value = callPackage (directory + "/${name}") {};
-        })
-        pkgNames);
+                inherit name;
+                value = callPackage (directory + "/${name}") {};
+            })
+            pkgNames);
 in {
     perSystem = {
         pkgs,
