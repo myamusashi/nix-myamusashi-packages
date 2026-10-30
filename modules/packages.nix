@@ -19,7 +19,7 @@
         callPackage,
         directory,
         exclude ? [
-            "9router"
+            # "9router"
             "headroom-ai"
             "hyprland-scroll-overview"
             "hypr-dynamic-cursors"
