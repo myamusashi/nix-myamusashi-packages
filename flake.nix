@@ -17,7 +17,7 @@
             inputs.nixpkgs.follows = "nixpkgs";
         };
         loaf-fm = {
-            url = "github:m-uvex/loaf-fm/main";
+            url = "github:myamusashi/loaf-fm?ref=feat/portal-filechooser";
             inputs.nixpkgs.follows = "nixpkgs";
         };
         mangaDesk = {

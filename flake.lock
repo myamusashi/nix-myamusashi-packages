@@ -2149,16 +2149,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1792973390,
-        "narHash": "sha256-QeiiM6UDwjoqk401qUlFiAwfEbSo1MnvuHMqaeonujA=",
-        "owner": "m-uvex",
+        "lastModified": 1793459638,
+        "narHash": "sha256-U5krlJY4Zx5ivkHS+FCxHgqHHIqG2DduXX4tzhP320o=",
+        "owner": "myamusashi",
         "repo": "loaf-fm",
-        "rev": "a63de4dffc2771af06a309b01ca88ee9d8da5fdb",
+        "rev": "699357e5589bcd897606750954e9b0bdaf2bc08b",
         "type": "github"
       },
       "original": {
-        "owner": "m-uvex",
-        "ref": "main",
+        "owner": "myamusashi",
+        "ref": "feat/portal-filechooser",
         "repo": "loaf-fm",
         "type": "github"
       }
