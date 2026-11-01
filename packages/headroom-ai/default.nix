@@ -8,14 +8,14 @@
 }:
 python3.pkgs.buildPythonPackage rec {
     pname = "headroom-ai";
-    version = "0.41.0";
+    version = "0.42.0";
     pyproject = true;
 
     src = fetchFromGitHub {
         owner = "chopratejas";
         repo = "headroom";
         rev = "v${version}";
-        hash = "sha256-ITVrw5ruGnNI9t7pq+0Z6gsnqDDAB/5v7I3oOQM5AtE=";
+        hash = "sha256-QtC+51i9SOH/Ny87yaO1glI0VM1ryeBKysDV2lnwcUw=";
     };
 
     cargoDeps = rustPlatform.fetchCargoVendor {

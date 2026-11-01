@@ -24,6 +24,7 @@
             "hyprland-scroll-overview"
             "hypr-dynamic-cursors"
             "ladybird"
+            "php-lsp"
         ],
     }: let
         entries = builtins.readDir directory;
