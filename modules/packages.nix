@@ -24,7 +24,6 @@
             "hyprland-scroll-overview"
             "hypr-dynamic-cursors"
             "ladybird"
-            "php-lsp"
         ],
     }: let
         entries = builtins.readDir directory;
@@ -52,12 +51,12 @@ in {
 
         pkgsWithNeovim = pkgs.extend neovim-nightly-overlay.overlays.default;
 
-        pkgsWithPhplsp = pkgs.extend (import ../overlays/php-lsp.nix {
-            php-lsp-src = php-lsp.outPath;
-        });
+        # pkgsWithPhplsp = pkgs.extend (import ../overlays/php-lsp.nix {
+        #     php-lsp-src = php-lsp.outPath;
+        # });
 
         ompPkgs = omp.packages.${system}.default;
-        phplsp = pkgsWithPhplsp.php-lsp;
+        # phplsp = pkgsWithPhplsp.php-lsp;
         zapfastPkgs = zapfast.packages.${system}.default;
         sereinPkgs = serein.packages.${system}.default;
         wlScrnFork = wl-screenrec-fork.packages.${system}.default;
@@ -77,7 +76,7 @@ in {
             // {inherit (pkgsWithNeovim) neovim;}
             // {
                 wl-screenrec-fork = wlScrnFork;
-                php-lsp = phplsp;
+                # php-lsp = phplsp;
                 omp = ompPkgs;
                 zapfast = zapfastPkgs;
                 serein = sereinPkgs;
