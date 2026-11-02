@@ -2164,11 +2164,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793576946,
-        "narHash": "sha256-RJ0W1mi50G83HTSo90fI46fc+WjtalqCd9Cap6YaaAY=",
+        "lastModified": 1793583839,
+        "narHash": "sha256-FTnB33/H/y4OxxkMwTaiX2CpbvNLgOi/zK+rZ7XsImg=",
         "owner": "myamusashi",
         "repo": "loaf-fm",
-        "rev": "de0164a7dbc8c6e54f92306f383b69e3205c3bdc",
+        "rev": "ffb2356ea9a2907861b9a78cfd2dc8fd1f8617ba",
         "type": "github"
       },
       "original": {
