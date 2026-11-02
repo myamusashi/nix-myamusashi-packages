@@ -2499,11 +2499,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792889508,
-        "narHash": "sha256-q3/MoZNwKR6DVx31hIwlwbV8bP4zPyc9K9XjEg4Laxo=",
+        "lastModified": 1793584686,
+        "narHash": "sha256-wA1L3rh9aUuwzOatLDYXwAx8iwDLfFGCrauM4H+ZiNc=",
         "owner": "myamusashi",
         "repo": "Serein",
-        "rev": "0c64e3e4307a3a93ba731f9ed0b2c739c19d4009",
+        "rev": "e85d546cc9c713e68961fec55e34828d759e23af",
         "type": "github"
       },
       "original": {
