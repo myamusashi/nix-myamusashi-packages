@@ -2164,11 +2164,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793650525,
-        "narHash": "sha256-/sQVaI/G3xEPVSmzs1HO1n+5n5MoKIyyxpA1tC5tg6U=",
+        "lastModified": 1793798575,
+        "narHash": "sha256-SnniL+HjW7EAMAkyN2KuHpD+RGqU8gxUdYrH4D+v39A=",
         "owner": "m-uvex",
         "repo": "loaf-fm",
-        "rev": "d09959e0dfde32cb743385113a92c94bf7a4ddc0",
+        "rev": "7135ac4d7bb5ae092260b7c67fbb7ce625565795",
         "type": "github"
       },
       "original": {
@@ -3001,11 +3001,11 @@
         "rust-overlay": "rust-overlay_2"
       },
       "locked": {
-        "lastModified": 1793555812,
-        "narHash": "sha256-4kfoxfZvM1OW8+f6EnlVlzq2VZ1840WA7iI9BhbL420=",
+        "lastModified": 1793753800,
+        "narHash": "sha256-e+yAM0j28ZP1QAzCY7HEJhtqQgyQ4CHqmz2GUCYRB7U=",
         "owner": "crmne",
         "repo": "zapfast",
-        "rev": "52e8fcf01f9dda6b818597a3616e56a173e2c77f",
+        "rev": "df637cef14120208559c49d072123cad8171885e",
         "type": "github"
       },
       "original": {
