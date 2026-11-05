@@ -55,13 +55,21 @@ in
 
         cargoHash = "sha256-FpzFuyTGUeiH62V3V9M0bvTcoRF/snHASOv2TPpzhlY=";
 
-        postPatch = ''
-            substituteInPlace Cargo.toml \
-              --replace-fail $'egui_demo_lib = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }\n' "" \
-              --replace-fail $'egui_inspection = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }\n' "" \
-              --replace-fail $'egui_extras = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }\n' "" \
-              --replace-fail $'egui_system_font_provider = { git = "https://github.com/storytold/egui.git", rev = "6d518fc799681571963842f95b55a6b68431b15a" }\n' ""
-        '';
+        postPatch = let
+            unusedPatchedCrates = [
+                "egui_demo_lib"
+                "egui_inspection"
+                "egui_system_font_provider"
+            ];
+        in
+            lib.concatMapStrings (crateName: ''
+                sed -i '/^${crateName} = { git = /d' Cargo.toml
+                if grep -q '^${crateName} = { git = ' Cargo.toml; then
+                    echo "failed to remove ${crateName} from Cargo.toml" >&2
+                    exit 1
+                fi
+            '')
+            unusedPatchedCrates;
 
         cargoBuildFlags = [
             "--package=wordcraft"
