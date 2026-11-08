@@ -16,7 +16,7 @@ buildNpmPackage rec {
 
     npmDepsFetcherVersion = 2;
     makeCacheWritable = true;
-    npmDepsHash = "sha256-g++6DH4r5hRU82/kej0SeAHAYg82u6ojygjsZT0mSOU=";
+    npmDepsHash = "sha256-CIL4QfQ4tSneTC5sV2lJedRepEKXd4Iixi4Z/qa2huo=";
 
     postPatch = ''
         cp ${./package-lock.json} package-lock.json
