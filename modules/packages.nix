@@ -2,7 +2,7 @@
     inherit
         (inputs)
         hyprland
-        php-lsp
+        yapfast
         neovim-nightly-overlay
         wl-screenrec-fork
         omp
@@ -51,12 +51,7 @@ in {
 
         pkgsWithNeovim = pkgs.extend neovim-nightly-overlay.overlays.default;
 
-        # pkgsWithPhplsp = pkgs.extend (import ../overlays/php-lsp.nix {
-        #     php-lsp-src = php-lsp.outPath;
-        # });
-
         ompPkgs = omp.packages.${system}.default;
-        # phplsp = pkgsWithPhplsp.php-lsp;
         zapfastPkgs = zapfast.packages.${system}.default;
         sereinPkgs = serein.packages.${system}.default;
         wlScrnFork = wl-screenrec-fork.packages.${system}.default;
@@ -65,6 +60,7 @@ in {
         qmlformatRsPkgs = qmlformat-rs.packages.${system}.default;
         lightauthPkgs = lightauth.packages.${system}.default;
         loafFmPkgs = loaf-fm.packages.${system}.default;
+        yapfastPkgs = yapfast.packages.${system}.default;
     in {
         formatter = pkgs.alejandra;
 
@@ -76,7 +72,7 @@ in {
             // {inherit (pkgsWithNeovim) neovim;}
             // {
                 wl-screenrec-fork = wlScrnFork;
-                # php-lsp = phplsp;
+                yapfast = yapfastPkgs;
                 omp = ompPkgs;
                 zapfast = zapfastPkgs;
                 serein = sereinPkgs;

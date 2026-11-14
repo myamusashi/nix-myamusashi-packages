@@ -112,6 +112,10 @@
             url = "github:crmne/zapfast";
             inputs.nixpkgs.follows = "nixpkgs";
         };
+        yapfast = {
+            url = "github:yapfast/yapfast";
+            inputs.nixpkgs.follows = "nixpkgs";
+        };
         serein = {
             url = "github:ViceVerse-cz/Serein";
             inputs.nixpkgs.follows = "nixpkgs";
