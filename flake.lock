@@ -2446,6 +2446,7 @@
         "quickshell": "quickshell",
         "serein": "serein",
         "wl-screenrec-fork": "wl-screenrec-fork",
+        "yapfast": "yapfast",
         "zapfast": "zapfast"
       }
     },
@@ -2471,6 +2472,27 @@
       }
     },
     "rust-overlay_2": {
+      "inputs": {
+        "nixpkgs": [
+          "yapfast",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792133817,
+        "narHash": "sha256-LivT78KkZ18adR5daoXj2nlIOxuLw6B96nvW4FOl4d0=",
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "rev": "ec07af44be2e0ce4e1a17e00a97d44232607c1ec",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "rust-overlay_3": {
       "inputs": {
         "nixpkgs": [
           "zapfast",
@@ -2993,12 +3015,33 @@
         "type": "github"
       }
     },
-    "zapfast": {
+    "yapfast": {
       "inputs": {
         "nixpkgs": [
           "nixpkgs"
         ],
         "rust-overlay": "rust-overlay_2"
+      },
+      "locked": {
+        "lastModified": 1794616805,
+        "narHash": "sha256-qobCo0JFonyOqBOca67Ov1+QmdrP2Txz39bfxTwMoak=",
+        "owner": "yapfast",
+        "repo": "yapfast",
+        "rev": "561c5aefdb00bf3c2efcede374a6552754f2b363",
+        "type": "github"
+      },
+      "original": {
+        "owner": "yapfast",
+        "repo": "yapfast",
+        "type": "github"
+      }
+    },
+    "zapfast": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "rust-overlay": "rust-overlay_3"
       },
       "locked": {
         "lastModified": 1794099567,
