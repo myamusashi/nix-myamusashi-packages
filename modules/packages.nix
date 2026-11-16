@@ -8,7 +8,6 @@
         wl-screenrec-fork
         omp
         zapfast
-        quickshell
         serein
         mangaDesk
         qmlformat-rs
@@ -49,7 +48,6 @@ in {
         });
         sereinPkgs = serein.packages.${system}.default;
         wlScrnFork = wl-screenrec-fork.packages.${system}.default;
-        qsPackages = quickshell.packages.${system}.default;
         mangaDeskPkgs = mangaDesk.packages.${system}.default.overrideAttrs (oldAttrs: {
             buildInputs = (oldAttrs.buildInputs or []) ++ [pkgs.sqlite];
         });
@@ -79,7 +77,6 @@ in {
                 omp = ompPkgs;
                 zapfast = zapfastPkgs;
                 serein = sereinPkgs;
-                quickshell = qsPackages;
                 mangaDesk = mangaDeskPkgs;
                 qmlformat-rs = qmlformatRsPkgs;
                 lightauth = lightauthPkgs;

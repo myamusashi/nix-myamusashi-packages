@@ -190,24 +190,6 @@
         "systems": "systems_4"
       },
       "locked": {
-        "lastModified": 1794427683,
-        "narHash": "sha256-o7ey9gEilsxaifqJWnBDlYSKbNWYQYtKwDyXeZU2kaU=",
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "rev": "cd489559845d81f673a12885576016c65cbe9363",
-        "type": "github"
-      },
-      "original": {
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "type": "github"
-      }
-    },
-    "flake-utils_3": {
-      "inputs": {
-        "systems": "systems_5"
-      },
-      "locked": {
         "lastModified": 1731533236,
         "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
         "owner": "numtide",
@@ -435,27 +417,6 @@
         "type": "github"
       }
     },
-    "php-lsp": {
-      "inputs": {
-        "flake-utils": "flake-utils_2",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1794746517,
-        "narHash": "sha256-GZcw6VxWT68bKz9+X4PZpah0CxsQiaLpcY62TrXYzNw=",
-        "owner": "jorgsowa",
-        "repo": "php-lsp",
-        "rev": "86d3a99df73fcacd11115e875623dd6706849d2a",
-        "type": "github"
-      },
-      "original": {
-        "owner": "jorgsowa",
-        "repo": "php-lsp",
-        "type": "github"
-      }
-    },
     "qmlformat-rs": {
       "inputs": {
         "nixpkgs": [
@@ -476,26 +437,6 @@
         "url": "https://git.myamusashi.cc/myamusashi/qmlformat-rs"
       }
     },
-    "quickshell": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1792651682,
-        "narHash": "sha256-TiCGqLMpNIy7FERewgfKVluPsLVF96uc6x6xwZnMjdQ=",
-        "owner": "quickshell-mirror",
-        "repo": "quickshell",
-        "rev": "9b0f339b19057f4731bf3b48293307d7ef241671",
-        "type": "github"
-      },
-      "original": {
-        "owner": "quickshell-mirror",
-        "repo": "quickshell",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
         "flake-parts": "flake-parts",
@@ -506,9 +447,7 @@
         "neovim-nightly-overlay": "neovim-nightly-overlay",
         "nixpkgs": "nixpkgs",
         "omp": "omp",
-        "php-lsp": "php-lsp",
         "qmlformat-rs": "qmlformat-rs",
-        "quickshell": "quickshell",
         "serein": "serein",
         "wl-screenrec-fork": "wl-screenrec-fork",
         "yapfast": "yapfast",
@@ -646,21 +585,6 @@
     },
     "systems_4": {
       "locked": {
-        "lastModified": 1791244623,
-        "narHash": "sha256-uuanbkFk8a313Zfrxdcz8Us/yQtaxNnKJtX8v0ZPpd8=",
-        "owner": "nix-systems",
-        "repo": "default",
-        "rev": "d36eeed142f88b5a636f2e3856a53c61654cf29b",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-systems",
-        "repo": "default",
-        "type": "github"
-      }
-    },
-    "systems_5": {
-      "locked": {
         "lastModified": 1681028828,
         "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
         "owner": "nix-systems",
@@ -720,7 +644,7 @@
     },
     "wl-screenrec-fork": {
       "inputs": {
-        "flake-utils": "flake-utils_3",
+        "flake-utils": "flake-utils_2",
         "nixpkgs": [
           "nixpkgs"
         ]
