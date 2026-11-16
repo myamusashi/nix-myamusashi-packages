@@ -59,10 +59,10 @@
     # The integration patch shipped by Ladybird targets this PDF.js version.
     pdfjsForLadybird = pdfjs.overrideAttrs (
         final: _prev: {
-            version = "5.6.205";
+            version = "2026.46.2";
             src = fetchzip {
                 url = "https://github.com/mozilla/pdf.js/releases/download/v${final.version}/pdfjs-${final.version}-dist.zip";
-                hash = "sha256-JMmxoT68PNJ/MmlMwVNYcHerorklLv5YY6C55xjn73w=";
+                hash = "sha256-AAoj74KVm8qGXcdbTKWEerzuwQy4yaQDmgYumZJ6ZdM=";
                 stripRoot = false;
             };
         }
@@ -75,7 +75,7 @@ in
         src = fetchFromGitHub {
             owner = "LadybirdBrowser";
             repo = "ladybird";
-            rev = "07e8ff403b7bb622071e1f762d77decb55fc8838";
+            rev = "2026.46.2";
             hash = "sha256-6d3DMDSCdGT13DrwdhKTLsaLHKlQL9V4jc0GAfGResM=";
         };
 

@@ -10,14 +10,14 @@
 }:
 rustPlatform.buildRustPackage (finalAttrs: {
     pname = "wallet-engine";
-    version = "unstable-e59e0d89";
+    version = "unstable-a396c520";
     __structuredAttrs = true;
 
     src = fetchFromGitHub {
         owner = "i582";
         repo = "wallet-engine";
-        rev = "e59e0d89d7ee90c388bf36e3334c5b276f396697";
-        hash = "sha256-729W7YCjkUCdL8Xk8BPHKdjpK6F+x1C9wnk/17TGhx4=";
+        rev = "a396c520ba0f8130c5bbf265ffa6f6f729546eee";
+        hash = "sha256-H1l16+XpqLyoEJbhnmG98nL8y/mFrdtqNmlaevnvdGw=";
     };
 
     patches = [

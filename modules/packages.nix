@@ -1,7 +1,8 @@
 {inputs, ...}: let
+    inherit (inputs.nixpkgs) lib;
+
     inherit
         (inputs)
-        hyprland
         yapfast
         neovim-nightly-overlay
         wl-screenrec-fork
@@ -19,36 +20,26 @@
         callPackage,
         directory,
         exclude ? [
-            # "9router"
-            "headroom-ai"
-            "hyprland-scroll-overview"
-            "hypr-dynamic-cursors"
             "ladybird"
         ],
     }: let
         entries = builtins.readDir directory;
-        isPkg = name: type:
+
+        isPackageDirectory = name: type:
             type
             == "directory"
             && builtins.pathExists (directory + "/${name}/default.nix")
             && !(builtins.elem name exclude);
-        pkgNames = builtins.filter (n: isPkg n entries.${n}) (builtins.attrNames entries);
     in
-        builtins.listToAttrs (map (name: {
-                inherit name;
-                value = callPackage (directory + "/${name}") {};
-            })
-            pkgNames);
+        builtins.mapAttrs
+        (name: _: callPackage (directory + "/${name}") {})
+        (lib.filterAttrs isPackageDirectory entries);
 in {
     perSystem = {
         pkgs,
         system,
         ...
     }: let
-        pkgsWithHyprland = pkgs.extend (final: prev: {
-            hyprland = hyprland.packages.${system}.hyprland;
-        });
-
         pkgsWithNeovim = pkgs.extend neovim-nightly-overlay.overlays.default;
 
         ompPkgs = omp.packages.${system}.default;
@@ -66,7 +57,7 @@ in {
 
         packages =
             (discoverPackages {
-                inherit (pkgsWithHyprland) callPackage;
+                inherit (pkgs) callPackage;
                 directory = ../packages;
             })
             // {inherit (pkgsWithNeovim) neovim;}

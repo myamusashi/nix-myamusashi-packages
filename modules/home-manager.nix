@@ -15,9 +15,4 @@
         );
         description = "Home Manager modules exposed by this flake.";
     };
-
-    config.flake.homeManagerModules = {
-        default = import ./hyprboost.nix;
-        hyprboost = import ./hyprboost.nix;
-    };
 }

@@ -33,7 +33,7 @@
 in
     rustPlatform.buildRustPackage (finalAttrs: {
         pname = "wordcraft";
-        version = "unstable-fde39ab0";
+        version = "unstable-cc90520b";
 
         __structuredAttrs = true;
         strictDeps = true;
@@ -46,14 +46,14 @@ in
         src = fetchFromGitHub {
             owner = "storytold";
             repo = "wordcraft";
-            rev = "fde39ab0615d9153db933d11752b8d0fc4505e30";
-            hash = "sha256-NwRZihCFcQKPcAOWPYo5x4SP9aXIhsvVGX0F7xDOoYQ=";
+            rev = "cc90520b9d8fb0d1e6be2c2688e6f915319e850a";
+            hash = "sha256-SbkMXYWLbPOvi5C6tuEVH7EcBsLcjmjhPxGlw1WK5gQ=";
         };
 
         doCheck = false;
         doInstallCheck = false;
 
-        cargoHash = "sha256-UOzegHh5SSoItkyLto7y+yOgCRB+swGk43pjYtY0Rvk=";
+        cargoHash = "sha256-gsvKiyloVlnUnjnjj3zleJRTJbcCsRWzY7ejaZpVO7M=";
 
         postPatch = let
             unusedPatchedCrates = [
