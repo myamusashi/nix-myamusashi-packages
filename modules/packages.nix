@@ -43,15 +43,27 @@ in {
         pkgsWithNeovim = pkgs.extend neovim-nightly-overlay.overlays.default;
 
         ompPkgs = omp.packages.${system}.default;
-        zapfastPkgs = zapfast.packages.${system}.default;
+        zapfastPkgs = zapfast.packages.${system}.default.overrideAttrs (oldAttrs: {
+            buildInputs = (oldAttrs.buildInputs or []) ++ [pkgs.openssl];
+            nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [pkgs.pkg-config];
+        });
         sereinPkgs = serein.packages.${system}.default;
         wlScrnFork = wl-screenrec-fork.packages.${system}.default;
         qsPackages = quickshell.packages.${system}.default;
-        mangaDeskPkgs = mangaDesk.packages.${system}.default;
+        mangaDeskPkgs = mangaDesk.packages.${system}.default.overrideAttrs (oldAttrs: {
+            buildInputs = (oldAttrs.buildInputs or []) ++ [pkgs.sqlite];
+        });
         qmlformatRsPkgs = qmlformat-rs.packages.${system}.default;
-        lightauthPkgs = lightauth.packages.${system}.default;
+        lightauthPkgs = lightauth.packages.${system}.default.overrideAttrs (oldAttrs: {
+            buildInputs = (oldAttrs.buildInputs or []) ++ [pkgs.libgit2];
+            nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [pkgs.pkg-config];
+        });
         loafFmPkgs = loaf-fm.packages.${system}.default;
-        yapfastPkgs = yapfast.packages.${system}.default;
+        yapfastPkgs = yapfast.packages.${system}.default.overrideAttrs (_: {
+            # The upstream derivation forces system AWS-LC, which is not in its
+            # build environment. Let aws-lc-sys compile its bundled source instead.
+            AWS_LC_SYS_USE_SYSTEM = "0";
+        });
     in {
         formatter = pkgs.alejandra;
 
