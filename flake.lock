@@ -230,11 +230,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792972910,
-        "narHash": "sha256-vI7WElM59mhgiTFp+lm0+knXZgyEJHWpXc+XMjWWd2E=",
+        "lastModified": 1794800988,
+        "narHash": "sha256-rETvciFsIil/X1euxOkJk4mUcV0rJJOSSigR1csIZEY=",
         "ref": "refs/heads/master",
-        "rev": "6485d73561bc92af0cd13e214dc5ec3e892054b7",
-        "revCount": 33,
+        "rev": "f76a8a53bf6058eaf6cc6ccdb525e8e9e8a59be4",
+        "revCount": 34,
         "type": "git",
         "url": "https://git.myamusashi.cc/myamusashi/lightauth"
       },
@@ -272,11 +272,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791340443,
-        "narHash": "sha256-DRWNE3P2ekB4O6QTjOKSH8lxEFXuFWTv9mZbaQM2w5E=",
+        "lastModified": 1794801046,
+        "narHash": "sha256-mHnVD3EiB2NEJvJfTRO4PTgKLWWRq22L3XqmaXjkwow=",
         "ref": "refs/heads/master",
-        "rev": "fb3c6bd0358ca492a7775edb532a8fc765f543e1",
-        "revCount": 15,
+        "rev": "7d2f708dc0fe17c3e133dc6170fcaeabbb8b699a",
+        "revCount": 16,
         "type": "git",
         "url": "https://git.myamusashi.cc/myamusashi/mangaDesk"
       },
