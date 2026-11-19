@@ -60,6 +60,7 @@
                 ./modules/packages.nix
                 ./modules/devshell.nix
                 ./modules/home-manager.nix
+                ./modules/overlays.nix
             ];
         };
 }
