@@ -525,15 +525,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1794616023,
-        "narHash": "sha256-47qS9USkGgZHtsHVRwGXcJ2HP9XNORZEn5ZL44Xf5Ho=",
-        "owner": "ViceVerse-cz",
+        "lastModified": 1795471461,
+        "narHash": "sha256-qNBBO/ctBoxkhv1lJh9rp8uBivSln0hyDw37o+GBrwA=",
+        "owner": "myamusashi",
         "repo": "Serein",
-        "rev": "bedb57c0c8def62e736e8a4f03e0a5d248b22126",
+        "rev": "9fb7c0bb390399cebce896c9bfd73655efde78c8",
         "type": "github"
       },
       "original": {
-        "owner": "ViceVerse-cz",
+        "owner": "myamusashi",
+        "ref": "fix/superseed-hot-reload",
         "repo": "Serein",
         "type": "github"
       }
