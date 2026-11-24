@@ -183,6 +183,15 @@ stdenv.mkDerivation (finalAttrs: {
                     ++ [
                         "extra_cflags+=[\"-DSKCMS_DLL\"]"
                     ];
+                postInstall =
+                    (prev.postInstall or "")
+                    + lib.optionalString stdenv.hostPlatform.isDarwin ''
+                        # Ladybird's native font loader uses SkTypeface_Mac::MakeFromStream.
+                        install -Dm644 ../../src/ports/SkTypeface_mac_ct.h \
+                          $out/include/skia/src/ports/SkTypeface_mac_ct.h
+                        install -Dm644 ../../src/utils/mac/SkUniqueCFRef.h \
+                          $out/include/skia/src/utils/mac/SkUniqueCFRef.h
+                    '';
             }))
             wuffs
             woff2

@@ -23,7 +23,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     patches = [
         (fetchpatch2 {
             url = "https://github.com/desktop-app/patches/raw/8a28b8433af70771c3d101c776ad837a94bd47ec/wallet-engine.patch";
-            hash = "sha256-R9zeNHfgVt6GuhPIz1Xq30sTCdDpBLvgarBZLw++LP4=";
+            hash = "sha256-1fou+1q4sBqdYSFGH+A8XXi6H0oZfJb7k9F4bR47iJw=";
         })
     ];
 
