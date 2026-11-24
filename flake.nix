@@ -13,7 +13,7 @@
             inputs.nixpkgs.follows = "nixpkgs";
         };
         loaf-fm = {
-            url = "github:myamusashi/loaf-fm/optimize";
+            url = "github:m-uvex/loaf-fm";
             inputs.nixpkgs.follows = "nixpkgs";
         };
         mangaDesk = {

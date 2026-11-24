@@ -172,11 +172,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1794427683,
-        "narHash": "sha256-o7ey9gEilsxaifqJWnBDlYSKbNWYQYtKwDyXeZU2kaU=",
+        "lastModified": 1791914995,
+        "narHash": "sha256-Zf/xfQEAasnwnmEfHqW/4hjDE/s44yn2hD4RuVIZRjA=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "cd489559845d81f673a12885576016c65cbe9363",
+        "rev": "b7a79d3fea1e214f6d668d521cecec0c01e26544",
         "type": "github"
       },
       "original": {
@@ -251,16 +251,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1795318676,
-        "narHash": "sha256-85yvoHGGl4BKm9d6n5wAusLGjw8mYsIZ7KfdEHJk0Gg=",
-        "owner": "myamusashi",
+        "lastModified": 1795535432,
+        "narHash": "sha256-1HWvMTI5fenDn0tbwCX/teDbvuTeg7DRB+5Wqf915UQ=",
+        "owner": "m-uvex",
         "repo": "loaf-fm",
-        "rev": "02a84f33a40c2df1eb32ad748c5fbee7a468e3aa",
+        "rev": "47d9546fa8cb7bcf9630e65dea3dc40268db3f11",
         "type": "github"
       },
       "original": {
-        "owner": "myamusashi",
-        "ref": "optimize",
+        "owner": "m-uvex",
         "repo": "loaf-fm",
         "type": "github"
       }
@@ -541,11 +540,11 @@
     },
     "systems": {
       "locked": {
-        "lastModified": 1791244623,
-        "narHash": "sha256-uuanbkFk8a313Zfrxdcz8Us/yQtaxNnKJtX8v0ZPpd8=",
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
         "owner": "nix-systems",
         "repo": "default",
-        "rev": "d36eeed142f88b5a636f2e3856a53c61654cf29b",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
         "type": "github"
       },
       "original": {
