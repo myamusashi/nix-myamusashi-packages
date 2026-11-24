@@ -16,8 +16,10 @@
     libxrandr,
     wayland,
     dbus,
+    aws-lc,
     nix-update-script,
     craft-fonts,
+    craft-i18n,
 }: let
     runtimeDeps = [
         libxkbcommon
@@ -33,7 +35,7 @@
 in
     rustPlatform.buildRustPackage (finalAttrs: {
         pname = "wordcraft";
-        version = "unstable-cc90520b";
+        version = "unstable-4700018b";
 
         __structuredAttrs = true;
         strictDeps = true;
@@ -41,35 +43,31 @@ in
         env = {
             CRAFT_FONTS_DIR = "${craft-fonts}";
             CRAFT_FONTS_REQUIRED = "1";
+            CRAFT_I18N_DIR = "${craft-i18n}";
+            CRAFT_I18N_REQUIRED = "1";
         };
 
         src = fetchFromGitHub {
             owner = "storytold";
             repo = "wordcraft";
-            rev = "cc90520b9d8fb0d1e6be2c2688e6f915319e850a";
-            hash = "sha256-SbkMXYWLbPOvi5C6tuEVH7EcBsLcjmjhPxGlw1WK5gQ=";
+            rev = "4700018be759ed3b2ce2fdf064aeaa168b688ffb";
+            hash = "sha256-ne0PpW6uR6FOHtGSm33KtIFjWamTHol+TW5xVzLf18A=";
         };
 
         doCheck = false;
         doInstallCheck = false;
 
-        cargoHash = "sha256-gsvKiyloVlnUnjnjj3zleJRTJbcCsRWzY7ejaZpVO7M=";
+        cargoHash = "sha256-aEi8Jvz8pslCw7jEguPvTeMlwvBXiHCIiwc2oVfOjgc=";
 
-        postPatch = let
-            unusedPatchedCrates = [
-                "egui_demo_lib"
-                "egui_inspection"
-                "egui_system_font_provider"
-            ];
-        in
-            lib.concatMapStrings (crateName: ''
-                sed -i '/^${crateName} = { git = /d' Cargo.toml
-                if grep -q '^${crateName} = { git = ' Cargo.toml; then
-                    echo "failed to remove ${crateName} from Cargo.toml" >&2
+        postPatch = ''
+            while IFS= read -r crateName; do
+                sed -i "/^''${crateName} = { git = /d" Cargo.toml
+                if grep -q "^''${crateName} = { git = " Cargo.toml; then
+                    echo "failed to remove ''${crateName} from Cargo.toml" >&2
                     exit 1
                 fi
-            '')
-            unusedPatchedCrates;
+            done < <(awk '/^\[\[patch\.unused\]\]/{f=1; next} f && /^name = "/{gsub(/^name = "|"/, ""); print; f=0}' Cargo.lock)
+        '';
 
         cargoBuildFlags = [
             "--package=wordcraft"
@@ -85,6 +83,10 @@ in
         nativeBuildInputs = [
             pkg-config
             patchelf
+        ];
+
+        buildInputs = [
+            aws-lc
         ];
 
         postInstall = lib.optionalString stdenv.hostPlatform.isLinux ''

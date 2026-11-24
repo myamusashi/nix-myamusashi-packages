@@ -38,14 +38,14 @@
 # - https://github.com/void-linux/void-packages/blob/master/srcpkgs/telegram-desktop/template
 stdenv.mkDerivation (finalAttrs: {
     pname = "telegram-desktop-unwrapped";
-    version = "7.4.4";
+    version = "7.4.6";
 
     src = fetchFromGitHub {
         owner = "telegramdesktop";
         repo = "tdesktop";
         rev = "v${finalAttrs.version}";
         fetchSubmodules = true;
-        hash = "sha256-qZx3zNIc1sehz1zi4lnDHB/9rO8SJ3Ovjhog2aXTbgg=";
+        hash = "sha256-3Ml8xgzzt/l3t9KRFHqYqHNt+SGw3TwXl996MYnFYAM=";
     };
 
     nativeBuildInputs = [
