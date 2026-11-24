@@ -17,6 +17,7 @@
     wayland,
     dbus,
     aws-lc,
+    harfbuzz,
     nix-update-script,
     craft-fonts,
     craft-i18n,
@@ -67,6 +68,22 @@ in
                     exit 1
                 fi
             done < <(awk '/^\[\[patch\.unused\]\]/{f=1; next} f && /^name = "/{gsub(/^name = "|"/, ""); print; f=0}' Cargo.lock)
+
+            # fetchCargoVendor copies only the rust/harfbuzz-subset-sys subdir from storytold/harfbuzz,
+            # so ../../src/harfbuzz-subset.cc is missing. Link nixpkgs' harfbuzz-subset instead.
+            harfbuzzBuildRs=$(find "$cargoDepsCopy" -path '*/harfbuzz-subset-sys-*/build.rs')
+            if [ -z "$harfbuzzBuildRs" ]; then
+                echo "failed to find vendored harfbuzz-subset-sys build.rs" >&2
+                exit 1
+            fi
+            while IFS= read -r buildRs; do
+                cat > "$buildRs" <<'EOF'
+            fn main() {
+                println!("cargo:rustc-link-lib=harfbuzz-subset");
+                println!("cargo:rustc-link-lib=harfbuzz");
+            }
+            EOF
+            done <<< "$harfbuzzBuildRs"
         '';
 
         cargoBuildFlags = [
@@ -87,6 +104,7 @@ in
 
         buildInputs = [
             aws-lc
+            harfbuzz
         ];
 
         postInstall = lib.optionalString stdenv.hostPlatform.isLinux ''

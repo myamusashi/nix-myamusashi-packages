@@ -87,6 +87,12 @@ stdenv.mkDerivation (finalAttrs: {
           --replace-fail libavutil-ladybird libavutil \
           --replace-fail libswresample-ladybird libswresample
 
+        # System FFmpeg does not carry Ladybird's custom Vulkan AV1 hwaccel flag patch.
+        substituteInPlace Libraries/LibMediaCodecs/FFmpeg/FFmpegVulkanVideoDecoder.cpp \
+          --replace-fail \
+            $'    if (m_codec_id == CodecID::AV1 && !PlatformFeatures::ProcessFeatures::the().is_enabled(PlatformFeatures::Feature::VulkanVideoBundledFFmpegAV1KeepSequenceHeaderEnableRefMVsFlag))\n        codec_context->hwaccel_flags |= AV_HWACCEL_FLAG_LADYBIRD_CLEAR_UNUSED_REF_FRAME_MVS;' \
+            $'#ifdef AV_HWACCEL_FLAG_LADYBIRD_CLEAR_UNUSED_REF_FRAME_MVS\n    if (m_codec_id == CodecID::AV1 && !PlatformFeatures::ProcessFeatures::the().is_enabled(PlatformFeatures::Feature::VulkanVideoBundledFFmpegAV1KeepSequenceHeaderEnableRefMVsFlag))\n        codec_context->hwaccel_flags |= AV_HWACCEL_FLAG_LADYBIRD_CLEAR_UNUSED_REF_FRAME_MVS;\n#endif'
+
         perl -0pi -e \
           's/find_package\(ICU 78\.[0-9]+ EXACT REQUIRED COMPONENTS data i18n uc\)/find_package(ICU ${icu78.version} EXACT REQUIRED COMPONENTS data i18n uc)/ or die "ICU dependency not found\n"' \
           Meta/CMake/check_for_dependencies.cmake
