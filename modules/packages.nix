@@ -17,7 +17,6 @@
         callPackage,
         directory,
         exclude ? [
-            "ladybird"
         ],
     }: let
         entries = builtins.readDir directory;
