@@ -7,6 +7,9 @@
     cmake,
     ninja,
     python3,
+    cargo,
+    rustc,
+    rustPlatform,
     qt6,
     kdePackages,
     tdlib,
@@ -48,11 +51,21 @@ stdenv.mkDerivation (finalAttrs: {
         hash = "sha256-3Ml8xgzzt/l3t9KRFHqYqHNt+SGw3TwXl996MYnFYAM=";
     };
 
+    cargoRoot = "Telegram/ThirdParty/twidget/rust";
+
+    cargoDeps = rustPlatform.fetchCargoVendor {
+        inherit (finalAttrs) pname version src cargoRoot;
+        hash = "sha256-NAjFvRuwebJ3sWVNhnEfyzBa3i8MTFG3lHJ7f3Keqb4=";
+    };
+
     nativeBuildInputs = [
         pkg-config
         cmake
         ninja
         python3
+        cargo
+        rustc
+        rustPlatform.cargoSetupHook
         qt6.qtshadertools
         gobject-introspection
     ];
