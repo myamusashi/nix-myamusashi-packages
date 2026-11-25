@@ -41,7 +41,7 @@
             inputs.nixpkgs.follows = "nixpkgs";
         };
         serein = {
-            url = "github:myamusashi/Serein?ref=fix/superseed-hot-reload";
+            url = "github:myamusashi/Serein/master";
             inputs.nixpkgs.follows = "nixpkgs";
         };
         home-manager = {

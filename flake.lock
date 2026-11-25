@@ -524,16 +524,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1795471461,
-        "narHash": "sha256-qNBBO/ctBoxkhv1lJh9rp8uBivSln0hyDw37o+GBrwA=",
+        "lastModified": 1795640159,
+        "narHash": "sha256-vWpKFYh95VZOF80ErbqQRUGb+4pqlA5NNY9hEMM61KI=",
         "owner": "myamusashi",
         "repo": "Serein",
-        "rev": "9fb7c0bb390399cebce896c9bfd73655efde78c8",
+        "rev": "cd11b70ffde54823ecbe480a8c75116ccc90bd4e",
         "type": "github"
       },
       "original": {
         "owner": "myamusashi",
-        "ref": "fix/superseed-hot-reload",
+        "ref": "master",
         "repo": "Serein",
         "type": "github"
       }
