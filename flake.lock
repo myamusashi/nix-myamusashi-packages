@@ -524,11 +524,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795640159,
-        "narHash": "sha256-vWpKFYh95VZOF80ErbqQRUGb+4pqlA5NNY9hEMM61KI=",
+        "lastModified": 1795828371,
+        "narHash": "sha256-+88wQXuxagO26nDDXAgkAi4eHrcv5HuadT0CuXw6Pqk=",
         "owner": "myamusashi",
         "repo": "Serein",
-        "rev": "cd11b70ffde54823ecbe480a8c75116ccc90bd4e",
+        "rev": "c7620832de5c69566e63aa04c9c20befe401cd11",
         "type": "github"
       },
       "original": {
